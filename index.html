@@ -542,7 +542,7 @@
             { id: 27, title: "Linker Nachbar", type: "swapPlayer", icon: "fa-shuffle", desc: "Tausche deine Position mit der Person links von dir." },
             { id: 28, title: "Schwerste Person", type: "heaviestShot", icon: "fa-weight-scale", desc: "Wähle die schwerste Person. Sie trinkt einen Shot." },
             { id: 29, title: "Aktionsfeld", type: "xmlTask", icon: "fa-wand-magic-sparkles", desc: "Ziehe eine zufällige Aufgabe aus der gewählten Stufe." },
-            { id: 30, title: "Zurück zu Feld 21", type: "toDecision", icon: "fa-arrow-left", desc: "Gehe zurück auf Feld 21. Die Aktion wird ausgelöst." },
+            { id: 30, title: "Zurück zur Entscheidung", type: "toDecision", icon: "fa-arrow-left", desc: "Gehe zurück auf das blaue Feld. Du musst dich entscheiden!" },
             { id: 31, title: "Jeans", type: "jeansSip", icon: "pants", desc: "Wähle alle Personen in Jeans. Sie trinken einen Schluck." },
             { id: 32, title: "Einmal aussetzen", type: "skipNext", icon: "fa-forward-step", desc: "Du setzt deinen nächsten Zug aus." },
             { id: 33, title: "Flaschendrehen", type: "bottleSpin", icon: "fa-bottle-water", desc: "Wähle eine Person, auf die die Flasche zeigt." },
@@ -1288,7 +1288,7 @@
                     const destination = Math.max(0, player.position - roll);
                     bodyEl.innerText = `Du hast eine ${roll} gewürfelt und gehst zurück auf Feld ${destination + 1}.`;
                     player.position = destination;
-                    if (BOARD_TILES[destination].type === 'xmlTask') pendingFollowUpPosition = destination;
+                    pendingFollowUpPosition = destination;
                     updatePlayerTokensOnBoard();
                     break;
                 }
