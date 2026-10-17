@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="de" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drinkopoly Ultimate - Party Game</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Righteous&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                        display: ['Righteous', 'cursive'],
+                    },
+                    colors: {
+                        neon: {
+                            purple: '#a855f7',
+                            pink: '#ec4899',
+                            cyan: '#06b6d4',
+                            amber: '#f59e0b',
+                            emerald: '#10b981'
+                        }
+                    },
+                    boxShadow: {
+                        'neon-purple': '0 0 20px rgba(168, 85, 247, 0.5)',
+                        'neon-pink': '0 0 20px rgba(236, 72, 153, 0.5)',
+                        'neon-cyan': '0 0 20px rgba(6, 182, 212, 0.5)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Styling & Glassmorphism */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        /* Neon Glow Effects */
+        .glow-text {
+            text-shadow: 0 0 10px currentColor;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(168, 85, 247, 0.4);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(168, 85, 247, 0.8);
+        }
+
+        /* 3D Dice Simulation CSS */
+        .dice-container {
+            perspective: 600px;
+        }
+        .dice {
+            width: 70px;
+            height: 70px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        .dice-face {
+            position: absolute;
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #1e1b4b, #311b92);
+            border: 2px solid #a855f7;
+            border-radius: 12px;
+            display: grid;
+            grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+            padding: 8px;
+            box-shadow: inset 0 0 12px rgba(168, 85, 247, 0.6);
+        }
+        .dice-dot {
+            width: 10px;
+            height: 10px;
+            background-color: #06b6d4;
+            border-radius: 50%;
+            justify-self: center;
+            align-self: center;
+            box-shadow: 0 0 8px #06b6d4;
+        }
+        /* Face positions */
+        .face-1 { transform: translateZ(35px); }
+        .face-2 { transform: rotateY(180deg) translateZ(35px); }
+        .face-3 { transform: rotateY(-90deg) translateZ(35px); }
+        .face-4 { transform: rotateY(90deg) translateZ(35px); }
+        .face-5 { transform: rotateX(90deg) translateZ(35px); }
+        .face-6 { transform: rotateX(-90deg) translateZ(35px); }
+
+        /* Board Tile Animations */
+        .tile-active {
+            animation: pulse-border 1.8s infinite alternate;
+        }
+        @keyframes pulse-border {
+            0% { border-color: rgba(168, 85, 247, 0.4); box-shadow: 0 0 5px rgba(168, 85, 247, 0.3); }
+            100% { border-color: rgba(236, 72, 153, 1); box-shadow: 0 0 20px rgba(236, 72, 153, 0.8); }
+        }
+
+        /* Player Marker Animation */
+        .player-token {
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        /* Canvas Overlay */
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col font-sans overflow-x-hidden antialiased bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-purple-950 to-slate-950 text-slate-100">
+
+    <!-- Confetti Canvas -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- Header Navigation -->
+    <header class="w-full glass-panel sticky top-0 z-40 px-4 py-3 border-b border-white/10 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 to-pink-500 flex items-center justify-center text-white font-display text-xl shadow-neon-purple">
+                <i class="fa-solid fa-beer-mug-empty"></i>
+            </div>
+            <div>
+                <h1 class="font-display text-xl md:text-2xl tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400">
+                    DRINKOPOLY
+                </h1>
+                <p class="text-xs text-slate-400 font-light hidden sm:block">Das ultimative Party-Erlebnis</p>
+            </div>
+        </div>
+
+        <!-- Controls / Actions -->
+        <div class="flex items-center gap-2 md:gap-4">
+            <button id="sound-toggle-btn" onclick="toggleSound()" class="p-2.5 rounded-xl glass-card hover:bg-white/10 text-slate-300 transition-all border border-white/5">
+                <i id="sound-icon" class="fa-solid fa-volume-high text-cyan-400"></i>
+            </button>
+            <button onclick="resetGamePrompt()" class="p-2.5 rounded-xl glass-card hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-all" title="Spiel zurücksetzen">
+                <i class="fa-solid fa-rotate-right"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-3 md:p-6 flex flex-col gap-6">
+
+        <!-- SETUP SCREEN (Visible before game start) -->
+        <section id="setup-screen" class="flex-1 flex items-center justify-center py-6">
+            <div class="w-full max-w-2xl glass-panel rounded-3xl p-6 md:p-8 border border-purple-500/20 shadow-2xl relative overflow-hidden">
+                <!-- Background Accent Light -->
+                <div class="absolute -top-24 -right-24 w-60 h-60 bg-purple-600/30 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="absolute -bottom-24 -left-24 w-60 h-60 bg-pink-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div class="text-center mb-8">
+                    <h2 class="font-display text-3xl md:text-4xl text-white mb-2 tracking-wide">Spieler Vorbereiten</h2>
+                    <p class="text-slate-400 text-sm">Füge 2 bis 8 Mitspieler hinzu und wähle Farben & Avatare.</p>
+                </div>
+
+                <!-- Player Registration Form -->
+                <div id="player-inputs" class="space-y-3 mb-6 max-h-[320px] overflow-y-auto pr-1">
+                    <!-- Dynamic Player Rows inserted here -->
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button onclick="addPlayerInput()" id="add-player-btn" class="flex-1 py-3 px-4 rounded-xl glass-card hover:bg-white/10 text-cyan-400 border border-cyan-500/30 font-semibold text-sm flex items-center justify-center gap-2 transition-all">
+                        <i class="fa-solid fa-user-plus"></i> Spieler hinzufügen
+                    </button>
+                    <button onclick="startGame()" class="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-base shadow-lg shadow-purple-900/50 flex items-center justify-center gap-2 transition-all transform active:scale-95">
+                        <i class="fa-solid fa-play"></i> Spiel Starten
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- GAME BOARD & DASHBOARD SCREEN (Hidden initially) -->
+        <section id="game-screen" class="hidden flex-1 flex flex-col lg:flex-row gap-6">
+
+            <!-- Left / Main Area: Game Board -->
+            <div class="flex-1 flex flex-col gap-4">
+
+                <!-- Current Turn Banner -->
+                <div class="glass-panel rounded-2xl p-4 flex items-center justify-between border border-white/10 shadow-lg">
+                    <div class="flex items-center gap-4">
+                        <div id="active-player-avatar" class="w-12 h-12 rounded-2xl flex items-center justify-center text-xl text-white font-bold shadow-md">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <div>
+                            <span class="text-xs uppercase tracking-widest text-slate-400 font-semibold">Am Zug</span>
+                            <h3 id="active-player-name" class="font-display text-xl text-white">Spieler 1</h3>
+                        </div>
+                    </div>
+
+                    <!-- Dice Roll Controller -->
+                    <div class="flex items-center gap-4">
+                        <div class="dice-container hidden sm:block">
+                            <div id="dice" class="dice">
+                                <div class="dice-face face-1"><div class="dice-dot" style="grid-area: 2/2;"></div></div>
+                                <div class="dice-face face-2"><div class="dice-dot" style="grid-area: 1/1;"></div><div class="dice-dot" style="grid-area: 3/3;"></div></div>
+                                <div class="dice-face face-3"><div class="dice-dot" style="grid-area: 1/1;"></div><div class="dice-dot" style="grid-area: 2/2;"></div><div class="dice-dot" style="grid-area: 3/3;"></div></div>
+                                <div class="dice-face face-4"><div class="dice-dot" style="grid-area: 1/1;"></div><div class="dice-dot" style="grid-area: 1/3;"></div><div class="dice-dot" style="grid-area: 3/1;"></div><div class="dice-dot" style="grid-area: 3/3;"></div></div>
+                                <div class="dice-face face-5"><div class="dice-dot" style="grid-area: 1/1;"></div><div class="dice-dot" style="grid-area: 1/3;"></div><div class="dice-dot" style="grid-area: 2/2;"></div><div class="dice-dot" style="grid-area: 3/1;"></div><div class="dice-dot" style="grid-area: 3/3;"></div></div>
+                                <div class="dice-face face-6"><div class="dice-dot" style="grid-area: 1/1;"></div><div class="dice-dot" style="grid-area: 1/3;"></div><div class="dice-dot" style="grid-area: 2/1;"></div><div class="dice-dot" style="grid-area: 2/3;"></div><div class="dice-dot" style="grid-area: 3/1;"></div><div class="dice-dot" style="grid-area: 3/3;"></div></div>
+                            </div>
+                        </div>
+
+                        <button id="roll-btn" onclick="rollDice()" class="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 hover:from-purple-400 hover:to-cyan-400 text-white font-display text-lg tracking-wider shadow-lg shadow-purple-500/30 hover:shadow-neon-pink transition-all transform active:scale-95 flex items-center gap-2">
+                            <i class="fa-solid fa-dice text-xl"></i> WÜRFELN
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Virtual Board Grid -->
+                <div class="glass-panel rounded-3xl p-3 md:p-5 border border-white/10 flex-1 min-h-[420px] relative flex flex-col justify-between">
+                    <div id="board-grid" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-7 gap-2 md:gap-3 h-full">
+                        <!-- Tiles dynamically inserted here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Sidebar: Players Status & Game Log -->
+            <div class="w-full lg:w-80 flex flex-col gap-4">
+
+                <!-- Scoreboard Card -->
+                <div class="glass-panel rounded-2xl p-4 border border-white/10 flex flex-col">
+                    <h3 class="font-display text-slate-300 text-sm tracking-wider uppercase mb-3 flex items-center justify-between">
+                        <span><i class="fa-solid fa-users text-purple-400 mr-2"></i> Rangliste</span>
+                        <span class="text-xs text-slate-500">Schlücke</span>
+                    </h3>
+                    <div id="players-list" class="space-y-2.5 max-h-60 overflow-y-auto pr-1">
+                        <!-- Dynamic Player Score Item -->
+                    </div>
+                </div>
+
+                <!-- Live Game Log Card -->
+                <div class="glass-panel rounded-2xl p-4 border border-white/10 flex-1 flex flex-col min-h-[200px]">
+                    <h3 class="font-display text-slate-300 text-sm tracking-wider uppercase mb-3">
+                        <i class="fa-solid fa-list-ul text-cyan-400 mr-2"></i> Spielprotokoll
+                    </h3>
+                    <div id="game-log" class="flex-1 space-y-2 overflow-y-auto text-xs text-slate-300 max-h-56 pr-1 font-mono">
+                        <div class="text-slate-500 italic">Willkommen bei Drinkopoly! Würfelt, um zu beginnen.</div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <!-- ACTION MODAL (Pops up on tile landing) -->
+    <div id="action-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div id="action-card" class="w-full max-w-md glass-panel rounded-3xl p-6 border border-purple-500/30 shadow-2xl transform scale-90 transition-transform duration-300 flex flex-col items-center text-center relative overflow-hidden">
+            
+            <div id="modal-icon-bg" class="w-20 h-20 rounded-3xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center mb-4 text-3xl text-purple-400 shadow-neon-purple">
+                <i id="modal-icon" class="fa-solid fa-glass-water"></i>
+            </div>
+
+            <span id="modal-badge" class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest bg-purple-500/20 text-purple-300 border border-purple-500/30 mb-2">
+                Aktion
+            </span>
+
+            <h3 id="modal-title" class="font-display text-2xl text-white mb-2">Feld-Name</h3>
+            
+            <div id="modal-body" class="text-slate-300 text-sm md:text-base mb-6 leading-relaxed bg-white/5 p-4 rounded-2xl border border-white/5 w-full">
+                Anweisung für den aktuellen Spieler.
+            </div>
+
+            <div class="flex gap-3 w-full">
+                <button id="modal-penalty-btn" onclick="applyPenalty()" class="hidden flex-1 py-3 px-4 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 font-semibold text-sm transition-all">
+                    Verweigern (+2 Schlücke)
+                </button>
+                <button id="modal-action-btn" onclick="closeModal()" class="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-sm shadow-lg shadow-purple-900/40 transition-all">
+                    Erledigt!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUDIO ENGINE & GAME LOGIC SCRIPT -->
+    <script>
+        /* --- Web Audio API Synthesizer (No external sound assets needed) --- */
+        let audioCtx = null;
+        let soundEnabled = true;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (!soundEnabled) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'dice') {
+                // Short rattle sound
+                for (let i = 0; i < 4; i++) {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(120 + Math.random() * 200, now + i * 0.08);
+                    gain.gain.setValueAtTime(0.15, now + i * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.08 + 0.06);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now + i * 0.08);
+                    osc.stop(now + i * 0.08 + 0.06);
+                }
+            } else if (type === 'step') {
+                // Pop sound for movement
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(600, now + 0.05);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.05);
+            } else if (type === 'win') {
+                // Victory jingle
+                const notes = [400, 500, 600, 800];
+                notes.forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+                    gain.gain.setValueAtTime(0.2, now + idx * 0.12);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.12 + 0.2);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now + idx * 0.12);
+                    osc.stop(now + idx * 0.12 + 0.2);
+                });
+            } else if (type === 'drink') {
+                // Glug sound effect
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.exponentialRampToValueAtTime(110, now + 0.15);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('sound-icon');
+            if (soundEnabled) {
+                icon.className = "fa-solid fa-volume-high text-cyan-400";
+            } else {
+                icon.className = "fa-solid fa-volume-xmark text-slate-500";
+            }
+        }
+
+        /* --- GAME DATA & TILES CONFIGURATION --- */
+        const AVATARS = [
+            { icon: 'fa-beer-mug-empty', color: '#a855f7' }, // Purple
+            { icon: 'fa-cocktail', color: '#ec4899' },      // Pink
+            { icon: 'fa-wine-glass', color: '#06b6d4' },    // Cyan
+            { icon: 'fa-champagne-glasses', color: '#f59e0b' },// Amber
+            { icon: 'fa-whiskey-glass', color: '#10b981' }, // Emerald
+            { icon: 'fa-martini-glass-citrus', color: '#ef4444' }, // Red
+            { icon: 'fa-skull', color: '#6366f1' },         // Indigo
+            { icon: 'fa-bolt', color: '#eab308' }            // Yellow
+        ];
+
+        // 24 Board Tiles
+        const BOARD_TILES = [
+            { id: 0, title: "Start", type: "start", icon: "fa-flag-checkered", desc: "Willkommen auf dem Feld! Alle trinken 1 Schluck zum Aufwärmen.", sips: 1 },
+            { id: 1, title: "1 Schluck", type: "drink", icon: "fa-whiskey-glass", desc: "Nimm 1 Schluck von deinem Getränk.", sips: 1 },
+            { id: 2, title: "Wahrheit oder Pflicht", type: "tod", icon: "fa-masks-theater", desc: "Wähle Wahrheit oder Pflicht! Wenn du verweigerst: 2 Strafschlücke." },
+            { id: 3, title: "Verteile 2", type: "give", icon: "fa-hand-holding-droplet", desc: "Bestimme jemanden, der 2 Schlücke trinken muss." },
+            { id: 4, title: "Kategorien", type: "minigame", icon: "fa-list-check", desc: "Nenne eine Kategorie (z.B. Automarken). Reihum nennt jeder einen Begriff. Wer versagt, trinkt 2 Schlücke." },
+            { id: 5, title: "Wasserpause!", type: "bonus", icon: "fa-bottle-water", desc: "Trinke einen großen Schluck Wasser. Erholung muss sein!" },
+            { id: 6, title: "Gefängnis / Kater", type: "jail", icon: "fa-dungeon", desc: "Du musst 1 Runde aussetzen oder 3 Schlücke Freikauf trinken!" },
+            { id: 7, title: "2 Schlücke", type: "drink", icon: "fa-beer-mug-empty", desc: "Nimm 2 Schlücke.", sips: 2 },
+            { id: 8, title: "Reim-Zeit", type: "minigame", icon: "fa-music", desc: "Sage ein Wort. Reihum muss sich jeder ein Reimwort überlegen. Werzögert oder wiederholt, trinkt 2 Schlücke." },
+            { id: 9, title: "Verteile 3", type: "give", icon: "fa-hand-holding-heart", desc: "Verteile 3 Schlücke beliebig auf deine Mitspieler." },
+            { id: 10, title: "Die Bar", type: "bar", icon: "fa-champagne-glasses", desc: "An der Bar! ALLE Mitspieler stoßen an und trinken 1 Schluck!" },
+            { id: 11, title: "Ich hab noch nie...", type: "minigame", icon: "fa-comments", desc: "Sage 'Ich habe noch nie...'. Alle, die es doch getran haben, trinken 1 Schluck." },
+            { id: 12, title: "3 Schlücke", type: "drink", icon: "fa-wine-glass", desc: "Gönn dir 3 Schlücke!", sips: 3 },
+            { id: 13, title: "Daumenkönig", type: "rule", icon: "fa-thumbs-up", desc: "Du bist ab jetzt Daumenkönig! Wann immer du deinen Daumen auf den Tisch legst, müssen es alle nachmachen. Der Letzte trinkt 1 Schluck." },
+            { id: 14, title: "Platz Tauschen", type: "special", icon: "fa-shuffle", desc: "Tausche deinen Platz auf dem Spielbrett mit dem führenden Spieler!" },
+            { id: 15, title: "Wasserfall", type: "minigame", icon: "fa-water", desc: "Alle fangen gleichzeitig an zu trinken. Erst wenn du aufhörst, darf der nächste aufhören!" },
+            { id: 16, title: "Abkürzung", type: "special", icon: "fa-bolt", desc: "Glück gehabt! Rücke sofort 2 Felder vor." },
+            { id: 17, title: "Wahrheit oder Pflicht", type: "tod", icon: "fa-comments", desc: "Wähle Wahrheit oder Pflicht!" },
+            { id: 18, title: "Ex oder Nix", type: "drink", icon: "fa-skull-crossbones", desc: "Oha! Trinke 4 Schlücke oder dein Glas auf Ex!" },
+            { id: 19, title: "Männer trinken", type: "group", icon: "fa-mars", desc: "Alle männlichen Mitspieler trinken 1 Schluck!" },
+            { id: 20, title: "Frauen trinken", type: "group", icon: "fa-venus", desc: "Alle weiblichen Mitspielerinnen trinken 1 Schluck!" },
+            { id: 21, title: "Partner wählen", type: "rule", icon: "fa-link", desc: "Wähle einen Drink-Partner. Wann immer du trinken musst, muss dein Partner ebenfalls trinken!" },
+            { id: 22, title: "Letzte Hürde", type: "drink", icon: "fa-fire", desc: "Knapp vor dem Ziel! Trinke 3 Schlücke." },
+            { id: 23, title: "ZIEL!", type: "finish", icon: "fa-trophy", desc: "HERZLICHEN GLÜCKWUNSCH! Du hast das Ziel erreicht und gewonnen!" }
+        ];
+
+        // Sample Truth or Dare Cards
+        const TRUTH_CARDS = [
+            "Was war deine peinlichste Begegnung beim Feiern?",
+            "Wer aus dieser Runde ist am ehesten ein Party-Crasher?",
+            "Welchen Song hörst du heimlich, der dir peinlich ist?",
+            "Was war der verrückteste Ort, an dem du je eingeschlafen bist?",
+            "Hast du schon einmal eine Nachricht verschickt, die du sofort bereut hast?"
+        ];
+
+        const DARE_CARDS = [
+            "Mache 10 Liegestütze oder trinke 2 Strafschlücke.",
+            "Lass die Person rechts von dir eine Nachricht an einen beliebigen Kontakt senden.",
+            "Imitiere einen Mitspieler. Die anderen müssen erraten, wer es ist.",
+            "Sprich die nächsten 2 Runden nur mit verstellter Stimme.",
+            "Tanze 20 Sekunden lang ohne Musik."
+        ];
+
+        /* --- STATE MANAGEMENT --- */
+        let players = [];
+        let currentPlayerIdx = 0;
+        let isRolling = false;
+        let pendingAction = null;
+
+        // Default setup with 3 players
+        let playerInputsData = [
+            { name: "Alex", color: AVATARS[0].color, icon: AVATARS[0].icon },
+            { name: "Sam", color: AVATARS[1].color, icon: AVATARS[1].icon },
+            { name: "Jordan", color: AVATARS[2].color, icon: AVATARS[2].icon }
+        ];
+
+        /* --- SETUP FUNCTIONS --- */
+        function renderSetupRows() {
+            const container = document.getElementById('player-inputs');
+            container.innerHTML = '';
+
+            playerInputsData.forEach((p, idx) => {
+                const row = document.createElement('div');
+                row.className = "flex items-center gap-3 p-2 rounded-2xl glass-card border border-white/5";
+                row.innerHTML = `
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg font-bold" style="background-color: ${p.color}">
+                        <i class="fa-solid ${p.icon}"></i>
+                    </div>
+                    <input type="text" value="${p.name}" onchange="updatePlayerName(${idx}, this.value)" placeholder="Spieler Name" class="flex-1 bg-slate-900/60 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500">
+                    ${playerInputsData.length > 2 ? `
+                        <button onclick="removePlayerInput(${idx})" class="p-2 text-red-400 hover:text-red-300">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    ` : ''}
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function addPlayerInput() {
+            if (playerInputsData.length >= 8) return;
+            const avatar = AVATARS[playerInputsData.length % AVATARS.length];
+            playerInputsData.push({
+                name: `Spieler ${playerInputsData.length + 1}`,
+                color: avatar.color,
+                icon: avatar.icon
+            });
+            renderSetupRows();
+        }
+
+        function removePlayerInput(idx) {
+            if (playerInputsData.length <= 2) return;
+            playerInputsData.splice(idx, 1);
+            renderSetupRows();
+        }
+
+        function updatePlayerName(idx, val) {
+            playerInputsData[idx].name = val.trim() || `Spieler ${idx + 1}`;
+        }
+
+        /* --- GAME START & INITIALIZATION --- */
+        function startGame() {
+            initAudio();
+            players = playerInputsData.map((p, idx) => ({
+                id: idx,
+                name: p.name,
+                color: p.color,
+                icon: p.icon,
+                position: 0,
+                sips: 0,
+                skipTurn: false
+            }));
+
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('hidden');
+
+            renderBoard();
+            updateDashboard();
+            logMessage("Das Spiel hat begonnen! Viel Spaß und trinkt verantwortungsvoll.");
+        }
+
+        function renderBoard() {
+            const grid = document.getElementById('board-grid');
+            grid.innerHTML = '';
+
+            BOARD_TILES.forEach((tile) => {
+                const tileEl = document.createElement('div');
+                tileEl.id = `tile-${tile.id}`;
+                tileEl.className = "relative glass-card rounded-2xl p-2.5 flex flex-col justify-between items-center text-center border border-white/5 min-h-[90px] md:min-h-[105px] transition-all duration-300 hover:border-purple-500/40";
+                
+                // Color coding tile borders/backgrounds based on type
+                let accentColor = "text-purple-400";
+                if (tile.type === 'drink') accentColor = "text-pink-400";
+                if (tile.type === 'minigame') accentColor = "text-cyan-400";
+                if (tile.type === 'bar') accentColor = "text-amber-400";
+                if (tile.type === 'jail') accentColor = "text-red-400";
+                if (tile.type === 'finish') accentColor = "text-emerald-400";
+
+                tileEl.innerHTML = `
+                    <div class="text-[10px] uppercase tracking-wider text-slate-400 font-mono font-semibold">#${tile.id + 1}</div>
+                    <i class="fa-solid ${tile.icon} ${accentColor} text-xl md:text-2xl my-1"></i>
+                    <div class="text-xs font-semibold text-slate-200 leading-tight">${tile.title}</div>
+                    <div id="tile-tokens-${tile.id}" class="flex flex-wrap gap-1 justify-center mt-1 min-h-[16px]"></div>
+                `;
+                grid.appendChild(tileEl);
+            });
+
+            updatePlayerTokensOnBoard();
+        }
+
+        function updatePlayerTokensOnBoard() {
+            // Clear existing tokens
+            BOARD_TILES.forEach(tile => {
+                const tokenContainer = document.getElementById(`tile-tokens-${tile.id}`);
+                if (tokenContainer) tokenContainer.innerHTML = '';
+                const tileEl = document.getElementById(`tile-${tile.id}`);
+                if (tileEl) tileEl.classList.remove('tile-active');
+            });
+
+            // Re-add tokens
+            players.forEach((p, idx) => {
+                const container = document.getElementById(`tile-tokens-${p.position}`);
+                if (container) {
+                    const token = document.createElement('div');
+                    token.className = "player-token w-5 h-5 rounded-full flex items-center justify-center text-[10px] text-white font-bold shadow-md transform hover:scale-125 transition-transform";
+                    token.style.backgroundColor = p.color;
+                    token.title = p.name;
+                    token.innerHTML = `<i class="fa-solid ${p.icon}"></i>`;
+                    container.appendChild(token);
+                }
+            });
+
+            // Highlight current tile
+            const activeTile = document.getElementById(`tile-${players[currentPlayerIdx].position}`);
+            if (activeTile) activeTile.classList.add('tile-active');
+        }
+
+        function updateDashboard() {
+            const curPlayer = players[currentPlayerIdx];
+            
+            // Active Player Banner
+            const avatarEl = document.getElementById('active-player-avatar');
+            avatarEl.style.backgroundColor = curPlayer.color;
+            avatarEl.innerHTML = `<i class="fa-solid ${curPlayer.icon}"></i>`;
+            
+            document.getElementById('active-player-name').innerText = curPlayer.name;
+
+            // Scoreboard
+            const list = document.getElementById('players-list');
+            list.innerHTML = '';
+            
+            // Sort by position / sips for display
+            [...players].sort((a,b) => b.position - a.position).forEach(p => {
+                const item = document.createElement('div');
+                item.className = `flex items-center justify-between p-2 rounded-xl glass-card border ${p.id === curPlayer.id ? 'border-purple-500/50 bg-purple-500/10' : 'border-white/5'}`;
+                item.innerHTML = `
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-7 h-7 rounded-lg flex items-center justify-center text-xs text-white" style="background-color: ${p.color}">
+                            <i class="fa-solid ${p.icon}"></i>
+                        </div>
+                        <span class="text-xs font-semibold text-slate-200">${p.name} ${p.id === curPlayer.id ? '<span class="text-[10px] text-purple-400 font-normal">(Zug)</span>' : ''}</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-xs text-slate-400 font-mono">Feld ${p.position + 1}</span>
+                        <span class="px-2 py-0.5 rounded-md bg-purple-900/40 text-purple-300 font-bold text-xs border border-purple-500/20">${p.sips} 🍺</span>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        /* --- DICE ROLL & MOVEMENT LOGIC --- */
+        function rollDice() {
+            if (isRolling) return;
+            
+            const curPlayer = players[currentPlayerIdx];
+            if (curPlayer.skipTurn) {
+                curPlayer.skipTurn = false;
+                logMessage(`${curPlayer.name} muss diese Runde im Gefängnis aussetzen!`);
+                nextTurn();
+                return;
+            }
+
+            isRolling = true;
+            document.getElementById('roll-btn').disabled = true;
+            playSound('dice');
+
+            const dice = document.getElementById('dice');
+            const rollResult = Math.floor(Math.random() * 6) + 1;
+
+            // 3D rotation animation calculation
+            const rotations = {
+                1: { x: 0, y: 0 },
+                2: { x: 0, y: 180 },
+                3: { x: 0, y: 90 },
+                4: { x: 0, y: -90 },
+                5: { x: -90, y: 0 },
+                6: { x: 90, y: 0 }
+            };
+
+            const extraSpinX = (Math.floor(Math.random() * 3) + 2) * 360;
+            const extraSpinY = (Math.floor(Math.random() * 3) + 2) * 360;
+            const targetRot = rotations[rollResult];
+
+            dice.style.transform = `rotateX(${targetRot.x + extraSpinX}deg) rotateY(${targetRot.y + extraSpinY}deg)`;
+
+            setTimeout(() => {
+                logMessage(`${curPlayer.name} hat eine ${rollResult} gewürfelt.`);
+                movePlayerSteps(curPlayer, rollResult);
+            }, 1250);
+        }
+
+        function movePlayerSteps(player, steps) {
+            let remaining = steps;
+
+            const interval = setInterval(() => {
+                if (remaining > 0) {
+                    if (player.position < BOARD_TILES.length - 1) {
+                        player.position++;
+                        playSound('step');
+                        updatePlayerTokensOnBoard();
+                    }
+                    remaining--;
+                } else {
+                    clearInterval(interval);
+                    isRolling = false;
+                    document.getElementById('roll-btn').disabled = false;
+                    
+                    // Handle tile action
+                    handleTileLanding(player);
+                }
+            }, 250);
+        }
+
+        /* --- TILE ACTION MODAL HANDLING --- */
+        function handleTileLanding(player) {
+            const tile = BOARD_TILES[player.position];
+            pendingAction = tile;
+
+            const modal = document.getElementById('action-modal');
+            const card = document.getElementById('action-card');
+            const titleEl = document.getElementById('modal-title');
+            const bodyEl = document.getElementById('modal-body');
+            const iconEl = document.getElementById('modal-icon');
+            const penaltyBtn = document.getElementById('modal-penalty-btn');
+            const actionBtn = document.getElementById('modal-action-btn');
+
+            titleEl.innerText = tile.title;
+            iconEl.className = `fa-solid ${tile.icon}`;
+            penaltyBtn.classList.add('hidden');
+            actionBtn.innerText = "Erledigt!";
+
+            // Handle special tile contents
+            if (tile.type === 'tod') {
+                const isTruth = Math.random() > 0.5;
+                const cardText = isTruth ? 
+                    TRUTH_CARDS[Math.floor(Math.random() * TRUTH_CARDS.length)] : 
+                    DARE_CARDS[Math.floor(Math.random() * DARE_CARDS.length)];
+                
+                bodyEl.innerHTML = `<strong class="text-pink-400">${isTruth ? 'WAHRHEIT:' : 'PFLICHT:'}</strong><br>${cardText}`;
+                penaltyBtn.classList.remove('hidden');
+            } else if (tile.type === 'drink') {
+                bodyEl.innerHTML = `${player.name}, trinke <strong class="text-pink-400">${tile.sips} Schluck(e)</strong>!`;
+                player.sips += tile.sips;
+                playSound('drink');
+            } else if (tile.type === 'give') {
+                bodyEl.innerHTML = `${player.name}, bestimme wer die Schlücke trinken muss!`;
+            } else if (tile.type === 'special' && tile.id === 14) { // Swap places
+                // Find leader
+                const leader = [...players].sort((a,b) => b.position - a.position)[0];
+                if (leader.id !== player.id) {
+                    const temp = player.position;
+                    player.position = leader.position;
+                    leader.position = temp;
+                    bodyEl.innerHTML = `Du hast die Positionen mit ${leader.name} getauscht!`;
+                    updatePlayerTokensOnBoard();
+                } else {
+                    bodyEl.innerHTML = `Du bist bereits in Führung! Nichts passiert.`;
+                }
+            } else if (tile.type === 'special' && tile.id === 16) { // Shortcut
+                bodyEl.innerHTML = `Abkürzung! Du rückst 2 Felder vor.`;
+                player.position = Math.min(BOARD_TILES.length - 1, player.position + 2);
+                updatePlayerTokensOnBoard();
+            } else if (tile.type === 'finish') {
+                bodyEl.innerHTML = `🏆 🎉 HRZLICHEN GLÜCKWUNSCH! ${player.name} HAT DAS SPIEL GEWONNEN!`;
+                triggerConfetti();
+                playSound('win');
+            } else {
+                bodyEl.innerHTML = tile.desc;
+                if (tile.sips) player.sips += tile.sips;
+            }
+
+            // Show Modal
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            card.classList.remove('scale-90');
+            card.classList.add('scale-100');
+
+            updateDashboard();
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('action-modal');
+            const card = document.getElementById('action-card');
+            
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            card.classList.remove('scale-100');
+            card.classList.add('scale-90');
+
+            // Check if game won
+            if (players[currentPlayerIdx].position >= BOARD_TILES.length - 1) {
+                logMessage(`🏆 ${players[currentPlayerIdx].name} hat Drinkopoly gewonnen!`);
+                return;
+            }
+
+            nextTurn();
+        }
+
+        function applyPenalty() {
+            const curPlayer = players[currentPlayerIdx];
+            curPlayer.sips += 2;
+            logMessage(`${curPlayer.name} hat die Aufgabe verweigert (+2 Strafschlücke).`);
+            playSound('drink');
+            closeModal();
+        }
+
+        function nextTurn() {
+            currentPlayerIdx = (currentPlayerIdx + 1) % players.length;
+            updateDashboard();
+            updatePlayerTokensOnBoard();
+        }
+
+        function logMessage(msg) {
+            const log = document.getElementById('game-log');
+            const entry = document.createElement('div');
+            entry.className = "py-1 border-b border-white/5 flex gap-2";
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            entry.innerHTML = `<span class="text-slate-500">[${time}]</span> <span>${msg}</span>`;
+            log.prepend(entry);
+        }
+
+        function resetGamePrompt() {
+            if (confirm("Möchtest du das aktuelle Spiel wirklich abbrechen und neu starten?")) {
+                document.getElementById('game-screen').classList.add('hidden');
+                document.getElementById('setup-screen').classList.remove('hidden');
+            }
+        }
+
+        /* --- CONFETTI ANIMATION SYSTEM --- */
+        function triggerConfetti() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const particles = [];
+            const colors = ['#a855f7', '#ec4899', '#06b6d4', '#f59e0b', '#10b981'];
+
+            for (let i = 0; i < 120; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    vx: (Math.random() - 0.5) * 18,
+                    vy: (Math.random() - 0.5) * 18 - 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    size: Math.random() * 8 + 4,
+                    life: 150
+                });
+            }
+
+            function animateConfetti() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let alive = false;
+
+                particles.forEach(p => {
+                    if (p.life > 0) {
+                        alive = true;
+                        p.x += p.vx;
+                        p.y += p.vy;
+                        p.vy += 0.15; // Gravity
+                        p.life--;
+
+                        ctx.fillStyle = p.color;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                });
+
+                if (alive) {
+                    requestAnimationFrame(animateConfetti);
+                }
+            }
+
+            animateConfetti();
+        }
+
+        // Initialize setup inputs on page load
+        window.onload = function() {
+            renderSetupRows();
+        };
+    </script>
+</body>
+</html>
