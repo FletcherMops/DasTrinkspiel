@@ -53,7 +53,6 @@
             backdrop-filter: blur(8px);
             border: 1px solid rgba(255, 255, 255, 0.08);
         }
-
         /* Neon Glow Effects */
         .glow-text {
             text-shadow: 0 0 10px currentColor;
@@ -222,6 +221,25 @@
                 </div>
             </div>
         </section>
+
+        <div id="player-customizer-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="player-customizer-title" aria-hidden="true" onclick="closePlayerCustomizer()">
+            <div class="glass-panel w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl border border-white/10 p-5 shadow-2xl" onclick="event.stopPropagation()">
+                <div class="mb-5 flex items-center justify-between">
+                    <h2 id="player-customizer-title" class="font-display text-xl text-white">Spieler anpassen</h2>
+                    <button type="button" onclick="closePlayerCustomizer()" aria-label="Schließen" class="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-slate-300 hover:bg-white/10">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="mb-5">
+                    <h3 class="mb-2 text-xs font-semibold uppercase tracking-widest text-slate-400">Symbol</h3>
+                    <div id="player-customizer-icons" class="grid grid-cols-5 gap-2"></div>
+                </div>
+                <div>
+                    <h3 class="mb-2 text-xs font-semibold uppercase tracking-widest text-slate-400">Farbe</h3>
+                    <div id="player-customizer-colors" class="grid grid-cols-5 gap-2"></div>
+                </div>
+            </div>
+        </div>
 
         <!-- GAME BOARD & DASHBOARD SCREEN (Hidden initially) -->
         <section id="game-screen" class="hidden flex-1 flex flex-col lg:flex-row gap-6">
@@ -445,6 +463,12 @@
             { label: 'Orange', value: '#f97316' }
         ];
 
+        const GENDER_OPTIONS = [
+            { value: 'male', label: 'Männlich', icon: 'fa-mars' },
+            { value: 'female', label: 'Weiblich', icon: 'fa-venus' },
+            { value: 'diverse', label: 'Divers', icon: 'fa-genderless' }
+        ];
+
         // 24 Board Tiles
         const BOARD_TILES = [
             { id: 0, title: "Start", type: "start", icon: "fa-flag-checkered", desc: "Willkommen auf dem Feld! Alle trinken 1 Schluck zum Aufwärmen.", sips: 1 },
@@ -495,6 +519,7 @@
         let currentPlayerIdx = 0;
         let isRolling = false;
         let pendingAction = null;
+        let activeCustomizationPlayerIdx = null;
         let selectedGameMode = 'classic';
         let selectedAdultLevel = 1;
 
@@ -511,34 +536,20 @@
 
             playerInputsData.forEach((p, idx) => {
                 const row = document.createElement('div');
-                row.className = "grid grid-cols-[2.5rem_minmax(0,1fr)] sm:grid-cols-[2.5rem_minmax(0,1fr)_10rem_auto] items-center gap-3 p-2 rounded-2xl glass-card border border-white/5";
+                row.className = "grid grid-cols-[2.5rem_minmax(0,1fr)] sm:grid-cols-[2.5rem_minmax(0,1fr)_auto_auto] items-center gap-3 p-2 rounded-2xl glass-card border border-white/5";
                 row.innerHTML = `
-                    <div id="player-avatar-${idx}" class="row-span-2 sm:row-span-1 w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg font-bold" style="background-color: ${p.color}">
+                    <button type="button" id="player-avatar-${idx}" onclick="openPlayerCustomizer(${idx})" aria-label="Symbol und Farbe für Spieler ${idx + 1} auswählen" aria-controls="player-customizer-modal" aria-expanded="false" title="Spieler anpassen" class="row-span-2 sm:row-span-1 w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg font-bold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white" style="background-color: ${p.color}">
                         <i id="player-icon-${idx}" class="fa-solid ${p.icon}"></i>
-                    </div>
+                    </button>
                     <input type="text" value="${p.name}" onchange="updatePlayerName(${idx}, this.value)" aria-label="Name für Spieler ${idx + 1}" placeholder="Name" class="min-w-0 bg-slate-900/60 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500">
-                    <select onchange="updatePlayerGender(${idx}, this.value)" aria-label="Geschlecht für Spieler ${idx + 1}" class="w-full bg-slate-900/60 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500">
-                        <option value="" ${p.gender === '' ? 'selected' : ''}>Keine Angabe</option>
-                        <option value="male" ${p.gender === 'male' ? 'selected' : ''}>Männlich</option>
-                        <option value="female" ${p.gender === 'female' ? 'selected' : ''}>Weiblich</option>
-                        <option value="diverse" ${p.gender === 'diverse' ? 'selected' : ''}>Divers</option>
-                    </select>
-                    <div class="col-span-2 sm:col-span-4 grid items-start gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
-                        <label class="flex min-w-0 items-center gap-2 text-xs text-slate-400">
-                            Farbe
-                            <select onchange="updatePlayerColor(${idx}, this.value)" aria-label="Farbe für Spieler ${idx + 1}" class="min-w-0 bg-slate-900/60 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500">
-                                ${PLAYER_COLORS.map(color => `<option value="${color.value}" ${p.color === color.value ? 'selected' : ''}>${color.label}</option>`).join('')}
-                            </select>
-                        </label>
-                        <label class="flex min-w-0 items-center gap-2 text-xs text-slate-400">
-                            Symbol
-                            <select onchange="updatePlayerIcon(${idx}, this.value)" aria-label="Symbol für Spieler ${idx + 1}" class="min-w-0 bg-slate-900/60 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500">
-                                ${AVATARS.map(avatar => `<option value="${avatar.icon}" ${p.icon === avatar.icon ? 'selected' : ''}>${avatar.label}</option>`).join('')}
-                            </select>
-                        </label>
+                    <div role="group" aria-label="Geschlecht für Spieler ${idx + 1}" class="grid grid-cols-3 gap-1">
+                        ${GENDER_OPTIONS.map(option => {
+                            const isSelected = p.gender === option.value;
+                            return `<button type="button" data-player-gender="${idx}" data-gender="${option.value}" onclick="updatePlayerGender(${idx}, '${option.value}')" aria-label="${option.label} für Spieler ${idx + 1}" aria-pressed="${isSelected}" title="${option.label}" class="flex h-9 w-9 items-center justify-center rounded-lg border text-sm text-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${isSelected ? 'border-cyan-400 bg-cyan-500/20' : 'border-white/10 bg-slate-900/60 hover:bg-white/10'}"><i class="fa-solid ${option.icon}"></i></button>`;
+                        }).join('')}
                     </div>
                     ${playerInputsData.length > 2 ? `
-                        <button onclick="removePlayerInput(${idx})" aria-label="Spieler ${idx + 1} entfernen" class="row-start-4 col-start-2 justify-self-end p-2 text-red-400 hover:text-red-300 sm:row-start-1 sm:col-start-4">
+                        <button onclick="removePlayerInput(${idx})" aria-label="Spieler ${idx + 1} entfernen" class="row-start-3 col-start-2 justify-self-end p-2 text-red-400 hover:text-red-300 sm:row-start-1 sm:col-start-4">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
                     ` : ''}
@@ -570,7 +581,16 @@
         }
 
         function updatePlayerGender(idx, gender) {
-            playerInputsData[idx].gender = gender;
+            const selectedGender = playerInputsData[idx].gender === gender ? '' : gender;
+            playerInputsData[idx].gender = selectedGender;
+            document.querySelectorAll(`[data-player-gender="${idx}"]`).forEach(button => {
+                const isSelected = button.dataset.gender === selectedGender;
+                button.setAttribute('aria-pressed', String(isSelected));
+                button.classList.toggle('border-cyan-400', isSelected);
+                button.classList.toggle('bg-cyan-500/20', isSelected);
+                button.classList.toggle('border-white/10', !isSelected);
+                button.classList.toggle('bg-slate-900/60', !isSelected);
+            });
         }
 
         function setGameMode(mode) {
@@ -612,14 +632,61 @@
             });
         }
 
+        function openPlayerCustomizer(idx) {
+            activeCustomizationPlayerIdx = idx;
+            document.getElementById(`player-avatar-${idx}`).setAttribute('aria-expanded', 'true');
+            document.getElementById('player-customizer-title').innerText = `Spieler ${idx + 1} anpassen`;
+            renderPlayerCustomizerOptions(idx);
+            const modal = document.getElementById('player-customizer-modal');
+            modal.setAttribute('aria-hidden', 'false');
+            modal.classList.remove('hidden');
+            document.querySelector('#player-customizer-icons button')?.focus();
+        }
+
+        function closePlayerCustomizer() {
+            if (activeCustomizationPlayerIdx === null) return;
+            document.getElementById(`player-avatar-${activeCustomizationPlayerIdx}`).setAttribute('aria-expanded', 'false');
+            const modal = document.getElementById('player-customizer-modal');
+            modal.setAttribute('aria-hidden', 'true');
+            modal.classList.add('hidden');
+            activeCustomizationPlayerIdx = null;
+        }
+
+        function renderPlayerCustomizerOptions(idx) {
+            document.getElementById('player-customizer-icons').innerHTML = AVATARS.map(avatar => {
+                const isSelected = playerInputsData[idx].icon === avatar.icon;
+                return `<button type="button" data-customizer-icon="${avatar.icon}" onclick="updatePlayerIcon(${idx}, '${avatar.icon}')" aria-label="${avatar.label}" aria-pressed="${isSelected}" title="${avatar.label}" class="flex h-11 items-center justify-center rounded-lg border text-base text-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${isSelected ? 'border-cyan-400 bg-cyan-500/20' : 'border-white/10 bg-slate-900/60 hover:bg-white/10'}"><i class="fa-solid ${avatar.icon}"></i></button>`;
+            }).join('');
+            document.getElementById('player-customizer-colors').innerHTML = PLAYER_COLORS.map(color => {
+                const isSelected = playerInputsData[idx].color === color.value;
+                return `<button type="button" data-customizer-color="${color.value}" onclick="updatePlayerColor(${idx}, '${color.value}')" aria-label="${color.label}" aria-pressed="${isSelected}" title="${color.label}" class="flex h-11 items-center justify-center rounded-lg border text-xs font-semibold text-slate-950 transition-transform hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white ${isSelected ? 'border-white ring-2 ring-white/70' : 'border-white/20'}" style="background-color: ${color.value}">${color.label}</button>`;
+            }).join('');
+        }
+
         function updatePlayerColor(idx, color) {
             playerInputsData[idx].color = color;
             document.getElementById(`player-avatar-${idx}`).style.backgroundColor = color;
+            document.querySelectorAll('[data-customizer-color]').forEach(button => {
+                const isSelected = button.dataset.customizerColor === color;
+                button.setAttribute('aria-pressed', String(isSelected));
+                button.classList.toggle('ring-2', isSelected);
+                button.classList.toggle('ring-white/70', isSelected);
+                button.classList.toggle('border-white', isSelected);
+                button.classList.toggle('border-white/20', !isSelected);
+            });
         }
 
         function updatePlayerIcon(idx, icon) {
             playerInputsData[idx].icon = icon;
             document.getElementById(`player-icon-${idx}`).className = `fa-solid ${icon}`;
+            document.querySelectorAll('[data-customizer-icon]').forEach(button => {
+                const isSelected = button.dataset.customizerIcon === icon;
+                button.setAttribute('aria-pressed', String(isSelected));
+                button.classList.toggle('border-cyan-400', isSelected);
+                button.classList.toggle('bg-cyan-500/20', isSelected);
+                button.classList.toggle('border-white/10', !isSelected);
+                button.classList.toggle('bg-slate-900/60', !isSelected);
+            });
         }
 
         /* --- GAME START & INITIALIZATION --- */
