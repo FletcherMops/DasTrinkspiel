@@ -183,7 +183,7 @@
 
                 <div class="text-center mb-8">
                     <h2 class="font-display text-3xl md:text-4xl text-white mb-2 tracking-wide">Spieler vorbereiten</h2>
-                    <p class="text-slate-400 text-sm">Füge 2 bis 8 Mitspielende hinzu, gib Namen ein und wähle pro Person optional ein Geschlecht.</p>
+                    <p class="text-slate-400 text-sm">Füge 2 bis 10 Mitspielende hinzu, gib Namen ein und wähle pro Person optional ein Geschlecht.</p>
                 </div>
 
                 <div class="mb-6">
@@ -421,13 +421,28 @@
         /* --- GAME DATA & TILES CONFIGURATION --- */
         const AVATARS = [
             { icon: 'fa-beer-mug-empty', label: 'Bierkrug', color: '#a855f7' },
-            { icon: 'fa-cocktail', label: 'Cocktailglas', color: '#ec4899' },
+            { icon: 'fa-martini-glass', label: 'Cocktailglas', color: '#ec4899' },
             { icon: 'fa-wine-glass', label: 'Weinglas', color: '#06b6d4' },
             { icon: 'fa-champagne-glasses', label: 'Sektgläser', color: '#f59e0b' },
             { icon: 'fa-whiskey-glass', label: 'Whiskeyglas', color: '#10b981' },
             { icon: 'fa-martini-glass-citrus', label: 'Martiniglas', color: '#ef4444' },
             { icon: 'fa-skull', label: 'Totenkopf', color: '#6366f1' },
-            { icon: 'fa-bolt', label: 'Blitz', color: '#eab308' }
+            { icon: 'fa-bolt', label: 'Blitz', color: '#eab308' },
+            { icon: 'fa-star', label: 'Stern', color: '#3b82f6' },
+            { icon: 'fa-crown', label: 'Krone', color: '#f97316' }
+        ];
+
+        const PLAYER_COLORS = [
+            { label: 'Lila', value: '#a855f7' },
+            { label: 'Rosa', value: '#ec4899' },
+            { label: 'Türkis', value: '#06b6d4' },
+            { label: 'Amber', value: '#f59e0b' },
+            { label: 'Grün', value: '#10b981' },
+            { label: 'Rot', value: '#ef4444' },
+            { label: 'Indigo', value: '#6366f1' },
+            { label: 'Gelb', value: '#eab308' },
+            { label: 'Blau', value: '#3b82f6' },
+            { label: 'Orange', value: '#f97316' }
         ];
 
         // 24 Board Tiles
@@ -508,10 +523,12 @@
                         <option value="female" ${p.gender === 'female' ? 'selected' : ''}>Weiblich</option>
                         <option value="diverse" ${p.gender === 'diverse' ? 'selected' : ''}>Divers</option>
                     </select>
-                    <div class="col-span-2 sm:col-span-4 flex flex-wrap items-center gap-3">
-                        <label class="flex items-center gap-2 text-xs text-slate-400">
+                    <div class="col-span-2 sm:col-span-4 grid items-start gap-3 sm:grid-cols-[minmax(0,1fr)_auto]">
+                        <label class="flex min-w-0 items-center gap-2 text-xs text-slate-400">
                             Farbe
-                            <input type="color" value="${p.color}" oninput="updatePlayerColor(${idx}, this.value)" aria-label="Farbe für Spieler ${idx + 1}" class="h-9 w-11 cursor-pointer rounded-lg border border-white/10 bg-slate-900 p-1">
+                            <select onchange="updatePlayerColor(${idx}, this.value)" aria-label="Farbe für Spieler ${idx + 1}" class="min-w-0 bg-slate-900/60 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500">
+                                ${PLAYER_COLORS.map(color => `<option value="${color.value}" ${p.color === color.value ? 'selected' : ''}>${color.label}</option>`).join('')}
+                            </select>
                         </label>
                         <label class="flex min-w-0 items-center gap-2 text-xs text-slate-400">
                             Symbol
@@ -531,7 +548,7 @@
         }
 
         function addPlayerInput() {
-            if (playerInputsData.length >= 8) return;
+            if (playerInputsData.length >= 10) return;
             const avatar = AVATARS[playerInputsData.length % AVATARS.length];
             playerInputsData.push({
                 name: "",
