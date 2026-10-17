@@ -479,6 +479,8 @@
             { value: 'diverse', label: 'Divers', icon: 'fa-genderless' }
         ];
 
+        const PLAYER_STEP_DURATION = 500;
+
         // Classic board tiles
         const CLASSIC_BOARD_TILES = [
             { id: 0, title: "Start", type: "start", icon: "fa-flag-checkered", desc: "Willkommen auf dem Feld! Alle trinken 1 Schluck zum Aufwärmen.", sips: 1 },
@@ -536,12 +538,12 @@
             { id: 23, title: "Würfle zurück", type: "backRoll", icon: "fa-dice", desc: "Würfle und gehe die gewürfelte Zahl an Feldern zurück." },
             { id: 24, title: "Aktionsfeld", type: "xmlTask", icon: "fa-wand-magic-sparkles", desc: "Ziehe eine zufällige Aufgabe aus der gewählten Stufe." },
             { id: 25, title: "Erster und letzter Platz", type: "firstLastShot", icon: "fa-people-group", desc: "Die erste und die letzte Person trinken je einen Shot!" },
-            { id: 26, title: "Schluck-Partner wählen", type: "sipPartner", icon: "fa-people-arrows-left-right", desc: "Wähle eine Person, mit der du einen Schluck trinkst." },
+            { id: 26, title: "Schluck-Partner", type: "sipPartner", icon: "fa-people-arrows-left-right", desc: "Wähle eine Person, mit der du einen Schluck trinkst." },
             { id: 27, title: "Linker Nachbar", type: "swapPlayer", icon: "fa-shuffle", desc: "Tausche deine Position mit der Person links von dir." },
             { id: 28, title: "Schwerste Person", type: "heaviestShot", icon: "fa-weight-scale", desc: "Wähle die schwerste Person. Sie trinkt einen Shot." },
             { id: 29, title: "Aktionsfeld", type: "xmlTask", icon: "fa-wand-magic-sparkles", desc: "Ziehe eine zufällige Aufgabe aus der gewählten Stufe." },
             { id: 30, title: "Zurück zu Feld 21", type: "toDecision", icon: "fa-arrow-left", desc: "Gehe zurück auf Feld 21. Die Aktion wird ausgelöst." },
-            { id: 31, title: "Jeans", type: "jeansSip", icon: "fa-jeans", desc: "Wähle alle Personen in Jeans. Sie trinken einen Schluck." },
+            { id: 31, title: "Jeans", type: "jeansSip", icon: "pants", desc: "Wähle alle Personen in Jeans. Sie trinken einen Schluck." },
             { id: 32, title: "Einmal aussetzen", type: "skipNext", icon: "fa-forward-step", desc: "Du setzt deinen nächsten Zug aus." },
             { id: 33, title: "Flaschendrehen", type: "bottleSpin", icon: "fa-bottle-water", desc: "Wähle eine Person, auf die die Flasche zeigt." },
             { id: 34, title: "5 Felder zurück", type: "backFiveToAction", icon: "fa-arrow-left", desc: "Gehe 5 Felder zurück. Das Aktionsfeld wird ausgelöst." },
@@ -576,6 +578,7 @@
         let activeCustomizationPlayerIdx = null;
         let adultQuestions = [];
         let pendingFollowUpPosition = null;
+        let pendingBranchRemaining = null;
         let pendingExtraRoll = false;
         let pendingAdultSelection = null;
         let isTilePreview = false;
@@ -777,6 +780,7 @@
         async function startGame() {
             initAudio();
             pendingFollowUpPosition = null;
+            pendingBranchRemaining = null;
             pendingExtraRoll = false;
             pendingAdultSelection = null;
             if (selectedGameMode === '18plus' && !adultQuestions.length) {
@@ -825,6 +829,10 @@
                 tileEl.setAttribute('tabindex', '0');
                 tileEl.setAttribute('aria-label', `Feld ${tile.id + 1}: ${tile.title}. Beschreibung anzeigen`);
                 tileEl.className = "relative glass-card rounded-2xl p-2.5 flex flex-col justify-between items-center text-center border border-white/5 min-h-[90px] md:min-h-[105px] transition-all duration-300 hover:border-purple-500/40 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-400";
+                if (selectedGameMode === '18plus' && tile.id === 20) {
+                    tileEl.style.backgroundColor = 'rgba(29, 78, 216, 0.8)';
+                    tileEl.style.borderColor = 'rgba(96, 165, 250, 0.8)';
+                }
                 tileEl.addEventListener('click', () => showTileDescription(tile.id));
                 tileEl.addEventListener('keydown', event => {
                     if (event.key === 'Enter' || event.key === ' ') {
@@ -841,9 +849,13 @@
                 if (tile.type === 'jail') accentColor = "text-red-400";
                 if (tile.type === 'finish' || tile.type === 'adultFinish') accentColor = "text-emerald-400";
 
+                const iconMarkup = tile.icon === 'pants'
+                    ? renderPantsIcon('h-6 w-6 md:h-7 md:w-7 my-1')
+                    : `<i class="fa-solid ${tile.icon} ${accentColor} text-xl md:text-2xl my-1"></i>`;
+
                 tileEl.innerHTML = `
                     <div class="text-[10px] uppercase tracking-wider text-slate-400 font-mono font-semibold">#${tile.id + 1}</div>
-                    <i class="fa-solid ${tile.icon} ${accentColor} text-xl md:text-2xl my-1"></i>
+                    ${iconMarkup}
                     <div class="text-xs font-semibold text-slate-200 leading-tight">${tile.title}</div>
                     <div id="tile-tokens-${tile.id}" class="flex flex-wrap gap-1 justify-center mt-1 min-h-[16px]"></div>
                 `;
@@ -851,6 +863,10 @@
             });
 
             updatePlayerTokensOnBoard();
+        }
+
+        function renderPantsIcon(className) {
+            return `<svg viewBox="0 0 24 24" class="${className} text-purple-400" fill="currentColor" aria-hidden="true"><path d="M6.5 2h11l2.2 20h-6.2L12 12l-1.5 10H4.3L6.5 2z"/></svg>`;
         }
 
         function showTileDescription(tileId) {
@@ -864,9 +880,16 @@
             const modal = document.getElementById('action-modal');
             const card = document.getElementById('action-card');
             const actionBtn = document.getElementById('modal-action-btn');
+            const iconEl = document.getElementById('modal-icon');
 
             document.getElementById('modal-title').innerText = tile.title;
-            document.getElementById('modal-icon').className = `fa-solid ${tile.icon}`;
+            if (tile.icon === 'pants') {
+                iconEl.className = 'inline-flex';
+                iconEl.innerHTML = renderPantsIcon('h-8 w-8');
+            } else {
+                iconEl.className = `fa-solid ${tile.icon}`;
+                iconEl.innerHTML = '';
+            }
             document.getElementById('modal-body').innerText = selectedGameMode === '18plus' && tile.type === 'xmlTask'
                 ? `Eine zufällige Aufgabe aus Stufe ${selectedAdultLevel} wird gezogen.`
                 : tile.desc;
@@ -1011,7 +1034,7 @@
                     // Handle tile action
                     handleTileLanding(player);
                 }
-            }, 250);
+            }, PLAYER_STEP_DURATION);
         }
 
         function moveAdultPlayerSteps(player, steps) {
@@ -1034,13 +1057,17 @@
                 playSound('step');
                 updatePlayerTokensOnBoard();
 
+                if (player.position === 36 && !player.won) {
+                    pendingBranchRemaining = remaining;
+                }
+
                 if (player.won || player.position === 36 || remaining <= 0) {
                     clearInterval(interval);
                     isRolling = false;
                     document.getElementById('roll-btn').disabled = false;
                     handleTileLanding(player);
                 }
-            }, 250);
+            }, PLAYER_STEP_DURATION);
         }
 
         /* --- TILE ACTION MODAL HANDLING --- */
@@ -1061,7 +1088,13 @@
             const adultDecisionControls = document.getElementById('adult-decision-controls');
 
             titleEl.innerText = tile.title;
-            iconEl.className = `fa-solid ${tile.icon}`;
+            if (tile.icon === 'pants') {
+                iconEl.className = 'inline-flex';
+                iconEl.innerHTML = renderPantsIcon('h-8 w-8');
+            } else {
+                iconEl.className = `fa-solid ${tile.icon}`;
+                iconEl.innerHTML = '';
+            }
             penaltyBtn.classList.add('hidden');
             actionBtn.classList.remove('hidden');
             actionBtn.innerText = "Erledigt!";
@@ -1339,7 +1372,9 @@
             if (pendingAction && pendingAction.type === 'branch') {
                 const roll = Math.floor(Math.random() * 6) + 1;
                 const destination = roll % 2 === 0 ? 37 : 13;
-                logMessage(`Feld 37: ${roll} gewürfelt, weiter zu Feld ${destination + 1}.`);
+                const remainingSteps = pendingBranchRemaining ?? 0;
+                pendingBranchRemaining = Math.max(0, remainingSteps - 1);
+                logMessage(`Wegweiser: ${roll} gewürfelt, weiter ab Feld ${destination + 1} mit ${pendingBranchRemaining} verbleibenden Schritten.`);
                 pendingFollowUpPosition = destination;
             }
             closeModal();
@@ -1513,6 +1548,14 @@
                 players[currentPlayerIdx].position = pendingFollowUpPosition;
                 pendingFollowUpPosition = null;
                 updatePlayerTokensOnBoard();
+                if (pendingBranchRemaining !== null) {
+                    const remainingSteps = pendingBranchRemaining;
+                    pendingBranchRemaining = null;
+                    if (remainingSteps > 0) {
+                        moveAdultPlayerSteps(players[currentPlayerIdx], remainingSteps);
+                        return;
+                    }
+                }
                 handleTileLanding(players[currentPlayerIdx]);
                 return;
             }
