@@ -510,7 +510,7 @@
         let BOARD_TILES = CLASSIC_BOARD_TILES;
 
         const ADULT_BOARD_TILES = [
-            { id: 0, title: "Start / Ziel", type: "adultFinish", icon: "fa-flag-checkered", desc: "Du erreichst das Ziel nur mit der exakten Augenzahl." },
+            { id: 0, title: "Start", type: "adultStart", icon: "fa-flag-checkered", desc: "Hier beginnt deine Runde. Das Ziel erreichst du nur mit der exakten Augenzahl." },
             { id: 1, title: "Shot", type: "adultShot", icon: "fa-whiskey-glass", desc: "Trinke einen Shot!" },
             { id: 2, title: "Schluck", type: "adultSip", icon: "fa-glass-water", desc: "Trinke einen Schluck!" },
             { id: 3, title: "Aktionsfeld", type: "xmlTask", icon: "fa-wand-magic-sparkles", desc: "Ziehe eine zufällige Aufgabe aus der gewählten Stufe." },
@@ -532,8 +532,8 @@
             { id: 19, title: "Erster Platz", type: "firstShot", icon: "fa-trophy", desc: "Die erste Person trinkt einen Shot." },
             { id: 20, title: "Entscheidung", type: "shotOrClothes", icon: "fa-scale-balanced", desc: "Entscheide: Trinke 3 Shots oder ziehe dich bis auf die Unterwäsche aus. Bei der zweiten Wahl trinken alle anderen einen Shot." },
             { id: 21, title: "Schluck", type: "adultSip", icon: "fa-glass-water", desc: "Trinke einen Schluck!" },
-            { id: 22, title: "Würfle zurück", type: "backRoll", icon: "fa-dice", desc: "Würfle und gehe die gewürfelte Zahl an Feldern zurück." },
-            { id: 23, title: "Aktionsfeld", type: "xmlTask", icon: "fa-wand-magic-sparkles", desc: "Ziehe eine zufällige Aufgabe aus der gewählten Stufe." },
+            { id: 22, title: "Aktionsfeld", type: "xmlTask", icon: "fa-wand-magic-sparkles", desc: "Ziehe eine zufällige Aufgabe aus der gewählten Stufe." },
+            { id: 23, title: "Würfle zurück", type: "backRoll", icon: "fa-dice", desc: "Würfle und gehe die gewürfelte Zahl an Feldern zurück." },
             { id: 24, title: "Aktionsfeld", type: "xmlTask", icon: "fa-wand-magic-sparkles", desc: "Ziehe eine zufällige Aufgabe aus der gewählten Stufe." },
             { id: 25, title: "Erster und letzter Platz", type: "firstLastShot", icon: "fa-people-group", desc: "Die erste und die letzte Person trinken je einen Shot!" },
             { id: 26, title: "Schluck-Partner wählen", type: "sipPartner", icon: "fa-people-arrows-left-right", desc: "Wähle eine Person, mit der du einen Schluck trinkst." },
@@ -547,7 +547,8 @@
             { id: 34, title: "5 Felder zurück", type: "backFiveToAction", icon: "fa-arrow-left", desc: "Gehe 5 Felder zurück. Das Aktionsfeld wird ausgelöst." },
             { id: 35, title: "Aktionsfeld", type: "xmlTask", icon: "fa-wand-magic-sparkles", desc: "Ziehe eine zufällige Aufgabe aus der gewählten Stufe." },
             { id: 36, title: "Wegweiser", type: "branch", icon: "fa-code-branch", desc: "Würfle erneut: Bei gerader Zahl geht es Richtung Ziel, bei ungerader Zahl ab Feld 14 weiter." },
-            { id: 37, title: "Austrinken!", type: "finishDrink", icon: "fa-whiskey-glass", desc: "Trinke dein Getränk aus." }
+            { id: 37, title: "Austrinken!", type: "finishDrink", icon: "fa-whiskey-glass", desc: "Trinke dein Getränk aus." },
+            { id: 38, title: "Ziel", type: "adultFinish", icon: "fa-flag-checkered", desc: "Du erreichst das Ziel nur mit der exakten Augenzahl." }
         ];
 
         // Sample Truth or Dare Cards
@@ -577,6 +578,8 @@
         let pendingFollowUpPosition = null;
         let pendingExtraRoll = false;
         let pendingAdultSelection = null;
+        let isTilePreview = false;
+        let previewSourceTileId = null;
         let selectedGameMode = 'classic';
         let selectedAdultLevel = 1;
 
@@ -818,7 +821,17 @@
             BOARD_TILES.forEach((tile) => {
                 const tileEl = document.createElement('div');
                 tileEl.id = `tile-${tile.id}`;
-                tileEl.className = "relative glass-card rounded-2xl p-2.5 flex flex-col justify-between items-center text-center border border-white/5 min-h-[90px] md:min-h-[105px] transition-all duration-300 hover:border-purple-500/40";
+                tileEl.setAttribute('role', 'button');
+                tileEl.setAttribute('tabindex', '0');
+                tileEl.setAttribute('aria-label', `Feld ${tile.id + 1}: ${tile.title}. Beschreibung anzeigen`);
+                tileEl.className = "relative glass-card rounded-2xl p-2.5 flex flex-col justify-between items-center text-center border border-white/5 min-h-[90px] md:min-h-[105px] transition-all duration-300 hover:border-purple-500/40 cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-cyan-400";
+                tileEl.addEventListener('click', () => showTileDescription(tile.id));
+                tileEl.addEventListener('keydown', event => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        showTileDescription(tile.id);
+                    }
+                });
                 
                 // Color coding tile borders/backgrounds based on type
                 let accentColor = "text-purple-400";
@@ -826,7 +839,7 @@
                 if (tile.type === 'minigame') accentColor = "text-cyan-400";
                 if (tile.type === 'bar') accentColor = "text-amber-400";
                 if (tile.type === 'jail') accentColor = "text-red-400";
-                if (tile.type === 'finish') accentColor = "text-emerald-400";
+                if (tile.type === 'finish' || tile.type === 'adultFinish') accentColor = "text-emerald-400";
 
                 tileEl.innerHTML = `
                     <div class="text-[10px] uppercase tracking-wider text-slate-400 font-mono font-semibold">#${tile.id + 1}</div>
@@ -838,6 +851,37 @@
             });
 
             updatePlayerTokensOnBoard();
+        }
+
+        function showTileDescription(tileId) {
+            const tile = BOARD_TILES[tileId];
+            if (!tile) return;
+
+            isTilePreview = true;
+            previewSourceTileId = tileId;
+            pendingAction = null;
+            pendingAdultSelection = null;
+            const modal = document.getElementById('action-modal');
+            const card = document.getElementById('action-card');
+            const actionBtn = document.getElementById('modal-action-btn');
+
+            document.getElementById('modal-title').innerText = tile.title;
+            document.getElementById('modal-icon').className = `fa-solid ${tile.icon}`;
+            document.getElementById('modal-body').innerText = selectedGameMode === '18plus' && tile.type === 'xmlTask'
+                ? `Eine zufällige Aufgabe aus Stufe ${selectedAdultLevel} wird gezogen.`
+                : tile.desc;
+            document.getElementById('modal-penalty-btn').classList.add('hidden');
+            document.getElementById('give-drinks-controls').classList.add('hidden');
+            document.getElementById('adult-player-choice-controls').classList.add('hidden');
+            document.getElementById('adult-decision-controls').classList.add('hidden');
+            actionBtn.classList.remove('hidden');
+            actionBtn.disabled = false;
+            actionBtn.innerText = 'Schließen';
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            card.classList.remove('scale-90');
+            card.classList.add('scale-100');
+            actionBtn.focus();
         }
 
         function updatePlayerTokensOnBoard() {
@@ -972,25 +1016,25 @@
 
         function moveAdultPlayerSteps(player, steps) {
             let remaining = steps;
-            let direction = 1;
 
             const interval = setInterval(() => {
-                let nextPosition = player.position + direction;
-                if (direction > 0 && nextPosition >= BOARD_TILES.length) {
-                    nextPosition = 0;
-                    if (player.hasStarted && remaining > 1) direction = -1;
-                    else if (player.hasStarted && remaining === 1) player.won = true;
-                } else if (direction < 0 && nextPosition < 0) {
-                    nextPosition = BOARD_TILES.length - 1;
+                if (player.position === 37 && player.hasStarted) {
+                    if (remaining === 1) {
+                        player.position = 38;
+                        player.won = true;
+                    } else {
+                        player.position = 0;
+                    }
+                } else {
+                    player.position++;
                 }
 
-                player.position = nextPosition;
-                if (nextPosition > 0) player.hasStarted = true;
+                if (player.position > 0) player.hasStarted = true;
                 remaining--;
                 playSound('step');
                 updatePlayerTokensOnBoard();
 
-                if (player.position === 36 || remaining <= 0) {
+                if (player.won || player.position === 36 || remaining <= 0) {
                     clearInterval(interval);
                     isRolling = false;
                     document.getElementById('roll-btn').disabled = false;
@@ -1002,6 +1046,7 @@
         /* --- TILE ACTION MODAL HANDLING --- */
         function handleTileLanding(player) {
             const tile = BOARD_TILES[player.position];
+            isTilePreview = false;
             pendingAction = tile;
 
             const modal = document.getElementById('action-modal');
@@ -1109,14 +1154,13 @@
             };
 
             switch (tile.type) {
+                case 'adultStart':
+                    bodyEl.innerText = tile.desc;
+                    break;
                 case 'adultFinish':
-                    if (player.won) {
-                        bodyEl.innerText = `Herzlichen Glückwunsch, ${player.name}! Du hast das Ziel exakt erreicht und gewonnen!`;
-                        triggerConfetti();
-                        playSound('win');
-                    } else {
-                        bodyEl.innerText = tile.desc;
-                    }
+                    bodyEl.innerText = `Herzlichen Glückwunsch, ${player.name}! Du hast das Ziel exakt erreicht und gewonnen!`;
+                    triggerConfetti();
+                    playSound('win');
                     break;
                 case 'adultShot':
                     addShots(player);
@@ -1429,6 +1473,17 @@
         function closeModal() {
             const modal = document.getElementById('action-modal');
             const card = document.getElementById('action-card');
+
+            if (isTilePreview) {
+                isTilePreview = false;
+                pendingAction = null;
+                modal.classList.add('opacity-0', 'pointer-events-none');
+                card.classList.remove('scale-100');
+                card.classList.add('scale-90');
+                document.getElementById(`tile-${previewSourceTileId}`)?.focus();
+                previewSourceTileId = null;
+                return;
+            }
 
             if (pendingAction && pendingAction.type === 'give') {
                 const rows = [...document.querySelectorAll('#give-drinks-players > div')];
