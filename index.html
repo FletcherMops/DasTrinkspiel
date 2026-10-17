@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drinkopoly Ultimate - Party Game</title>
+    <title>Drinkopoly Ultimate - Partyspiel</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -182,8 +182,8 @@
                 <div class="absolute -bottom-24 -left-24 w-60 h-60 bg-pink-600/20 rounded-full blur-3xl pointer-events-none"></div>
 
                 <div class="text-center mb-8">
-                    <h2 class="font-display text-3xl md:text-4xl text-white mb-2 tracking-wide">Spieler Vorbereiten</h2>
-                    <p class="text-slate-400 text-sm">Füge 2 bis 8 Mitspieler hinzu und wähle Farben & Avatare.</p>
+                    <h2 class="font-display text-3xl md:text-4xl text-white mb-2 tracking-wide">Spieler vorbereiten</h2>
+                    <p class="text-slate-400 text-sm">Füge 2 bis 8 Mitspielende hinzu und wähle ihre Farben und Avatare.</p>
                 </div>
 
                 <!-- Player Registration Form -->
@@ -196,7 +196,7 @@
                         <i class="fa-solid fa-user-plus"></i> Spieler hinzufügen
                     </button>
                     <button onclick="startGame()" class="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-base shadow-lg shadow-purple-900/50 flex items-center justify-center gap-2 transition-all transform active:scale-95">
-                        <i class="fa-solid fa-play"></i> Spiel Starten
+                        <i class="fa-solid fa-play"></i> Spiel starten
                     </button>
                 </div>
             </div>
@@ -254,7 +254,7 @@
                 <div class="glass-panel rounded-2xl p-4 border border-white/10 flex flex-col">
                     <h3 class="font-display text-slate-300 text-sm tracking-wider uppercase mb-3 flex items-center justify-between">
                         <span><i class="fa-solid fa-users text-purple-400 mr-2"></i> Rangliste</span>
-                        <span class="text-xs text-slate-500">Schlücke</span>
+                        <span class="text-xs text-slate-500">Schlucke</span>
                     </h3>
                     <div id="players-list" class="space-y-2.5 max-h-60 overflow-y-auto pr-1">
                         <!-- Dynamic Player Score Item -->
@@ -295,7 +295,7 @@
 
             <div class="flex gap-3 w-full">
                 <button id="modal-penalty-btn" onclick="applyPenalty()" class="hidden flex-1 py-3 px-4 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 font-semibold text-sm transition-all">
-                    Verweigern (+2 Schlücke)
+                    Ablehnen (+2 Strafschlucke)
                 </button>
                 <button id="modal-action-btn" onclick="closeModal()" class="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-sm shadow-lg shadow-purple-900/40 transition-all">
                     Erledigt!
@@ -407,28 +407,28 @@
         const BOARD_TILES = [
             { id: 0, title: "Start", type: "start", icon: "fa-flag-checkered", desc: "Willkommen auf dem Feld! Alle trinken 1 Schluck zum Aufwärmen.", sips: 1 },
             { id: 1, title: "1 Schluck", type: "drink", icon: "fa-whiskey-glass", desc: "Nimm 1 Schluck von deinem Getränk.", sips: 1 },
-            { id: 2, title: "Wahrheit oder Pflicht", type: "tod", icon: "fa-masks-theater", desc: "Wähle Wahrheit oder Pflicht! Wenn du verweigerst: 2 Strafschlücke." },
-            { id: 3, title: "Verteile 2", type: "give", icon: "fa-hand-holding-droplet", desc: "Bestimme jemanden, der 2 Schlücke trinken muss." },
-            { id: 4, title: "Kategorien", type: "minigame", icon: "fa-list-check", desc: "Nenne eine Kategorie (z.B. Automarken). Reihum nennt jeder einen Begriff. Wer versagt, trinkt 2 Schlücke." },
+            { id: 2, title: "Wahrheit oder Pflicht", type: "tod", icon: "fa-masks-theater", desc: "Wähle Wahrheit oder Pflicht! Wenn du ablehnst, trinkst du 2 Strafschlucke." },
+            { id: 3, title: "Verteile 2", type: "give", icon: "fa-hand-holding-droplet", desc: "Bestimme eine Person, die 2 Schlucke trinken muss." },
+            { id: 4, title: "Kategorien", type: "minigame", icon: "fa-list-check", desc: "Nenne eine Kategorie (z. B. Automarken). Reihum nennt jede Person einen Begriff. Wer zögert oder etwas wiederholt, trinkt 2 Schlucke." },
             { id: 5, title: "Wasserpause!", type: "bonus", icon: "fa-bottle-water", desc: "Trinke einen großen Schluck Wasser. Erholung muss sein!" },
-            { id: 6, title: "Gefängnis / Kater", type: "jail", icon: "fa-dungeon", desc: "Du musst 1 Runde aussetzen oder 3 Schlücke Freikauf trinken!" },
-            { id: 7, title: "2 Schlücke", type: "drink", icon: "fa-beer-mug-empty", desc: "Nimm 2 Schlücke.", sips: 2 },
-            { id: 8, title: "Reim-Zeit", type: "minigame", icon: "fa-music", desc: "Sage ein Wort. Reihum muss sich jeder ein Reimwort überlegen. Werzögert oder wiederholt, trinkt 2 Schlücke." },
-            { id: 9, title: "Verteile 3", type: "give", icon: "fa-hand-holding-heart", desc: "Verteile 3 Schlücke beliebig auf deine Mitspieler." },
-            { id: 10, title: "Die Bar", type: "bar", icon: "fa-champagne-glasses", desc: "An der Bar! ALLE Mitspieler stoßen an und trinken 1 Schluck!" },
-            { id: 11, title: "Ich hab noch nie...", type: "minigame", icon: "fa-comments", desc: "Sage 'Ich habe noch nie...'. Alle, die es doch getran haben, trinken 1 Schluck." },
-            { id: 12, title: "3 Schlücke", type: "drink", icon: "fa-wine-glass", desc: "Gönn dir 3 Schlücke!", sips: 3 },
-            { id: 13, title: "Daumenkönig", type: "rule", icon: "fa-thumbs-up", desc: "Du bist ab jetzt Daumenkönig! Wann immer du deinen Daumen auf den Tisch legst, müssen es alle nachmachen. Der Letzte trinkt 1 Schluck." },
-            { id: 14, title: "Platz Tauschen", type: "special", icon: "fa-shuffle", desc: "Tausche deinen Platz auf dem Spielbrett mit dem führenden Spieler!" },
-            { id: 15, title: "Wasserfall", type: "minigame", icon: "fa-water", desc: "Alle fangen gleichzeitig an zu trinken. Erst wenn du aufhörst, darf der nächste aufhören!" },
+            { id: 6, title: "Gefängnis / Kater", type: "jail", icon: "fa-dungeon", desc: "Du setzt eine Runde aus oder trinkst 3 Schlucke, um dich freizukaufen!" },
+            { id: 7, title: "2 Schlucke", type: "drink", icon: "fa-beer-mug-empty", desc: "Nimm 2 Schlucke.", sips: 2 },
+            { id: 8, title: "Reim-Zeit", type: "minigame", icon: "fa-music", desc: "Nenne ein Wort. Reihum nennt jede Person ein Wort, das sich darauf reimt. Wer zögert oder ein Wort wiederholt, trinkt 2 Schlucke." },
+            { id: 9, title: "Verteile 3", type: "give", icon: "fa-hand-holding-heart", desc: "Verteile 3 Schlucke beliebig auf deine Mitspielenden." },
+            { id: 10, title: "Die Bar", type: "bar", icon: "fa-champagne-glasses", desc: "An der Bar! Alle Mitspielenden stoßen an und trinken einen Schluck!" },
+            { id: 11, title: "Ich habe noch nie …", type: "minigame", icon: "fa-comments", desc: "Sage: „Ich habe noch nie …“ Alle, die das schon einmal getan haben, trinken einen Schluck." },
+            { id: 12, title: "3 Schlucke", type: "drink", icon: "fa-wine-glass", desc: "Gönn dir 3 Schlucke!", sips: 3 },
+            { id: 13, title: "Daumen-Regel", type: "rule", icon: "fa-thumbs-up", desc: "Du bestimmst ab jetzt die Daumen-Regel: Wann immer du deinen Daumen auf den Tisch legst, müssen alle anderen es dir gleichtun. Die letzte Person trinkt einen Schluck." },
+            { id: 14, title: "Platz tauschen", type: "special", icon: "fa-shuffle", desc: "Tausche deinen Platz auf dem Spielbrett mit der führenden Person!" },
+            { id: 15, title: "Wasserfall", type: "minigame", icon: "fa-water", desc: "Alle fangen gleichzeitig an zu trinken. Erst wenn du aufhörst zu trinken, darf die nächste Person aufhören!" },
             { id: 16, title: "Abkürzung", type: "special", icon: "fa-bolt", desc: "Glück gehabt! Rücke sofort 2 Felder vor." },
             { id: 17, title: "Wahrheit oder Pflicht", type: "tod", icon: "fa-comments", desc: "Wähle Wahrheit oder Pflicht!" },
-            { id: 18, title: "Ex oder Nix", type: "drink", icon: "fa-skull-crossbones", desc: "Oha! Trinke 4 Schlücke oder dein Glas auf Ex!" },
-            { id: 19, title: "Männer trinken", type: "group", icon: "fa-mars", desc: "Alle männlichen Mitspieler trinken 1 Schluck!" },
-            { id: 20, title: "Frauen trinken", type: "group", icon: "fa-venus", desc: "Alle weiblichen Mitspielerinnen trinken 1 Schluck!" },
-            { id: 21, title: "Partner wählen", type: "rule", icon: "fa-link", desc: "Wähle einen Drink-Partner. Wann immer du trinken musst, muss dein Partner ebenfalls trinken!" },
-            { id: 22, title: "Letzte Hürde", type: "drink", icon: "fa-fire", desc: "Knapp vor dem Ziel! Trinke 3 Schlücke." },
-            { id: 23, title: "ZIEL!", type: "finish", icon: "fa-trophy", desc: "HERZLICHEN GLÜCKWUNSCH! Du hast das Ziel erreicht und gewonnen!" }
+            { id: 18, title: "Ex oder nix", type: "drink", icon: "fa-skull-crossbones", desc: "Oha! Trinke 4 Schlucke oder leere dein Glas auf Ex!" },
+            { id: 19, title: "Männer trinken", type: "group", icon: "fa-mars", desc: "Alle Männer trinken einen Schluck!" },
+            { id: 20, title: "Frauen trinken", type: "group", icon: "fa-venus", desc: "Alle Frauen trinken einen Schluck!" },
+            { id: 21, title: "Trinkpartner wählen", type: "rule", icon: "fa-link", desc: "Wähle einen Trinkpartner. Wenn du trinken musst, trinkt dein Partner ebenfalls." },
+            { id: 22, title: "Letzte Hürde", type: "drink", icon: "fa-fire", desc: "Knapp vor dem Ziel! Trinke 3 Schlucke." },
+            { id: 23, title: "ZIEL!", type: "finish", icon: "fa-trophy", desc: "Herzlichen Glückwunsch! Du hast das Ziel erreicht und gewonnen!" }
         ];
 
         // Sample Truth or Dare Cards
@@ -441,7 +441,7 @@
         ];
 
         const DARE_CARDS = [
-            "Mache 10 Liegestütze oder trinke 2 Strafschlücke.",
+            "Mache 10 Liegestütze oder trinke 2 Strafschlucke.",
             "Lass die Person rechts von dir eine Nachricht an einen beliebigen Kontakt senden.",
             "Imitiere einen Mitspieler. Die anderen müssen erraten, wer es ist.",
             "Sprich die nächsten 2 Runden nur mit verstellter Stimme.",
@@ -473,7 +473,7 @@
                     <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg font-bold" style="background-color: ${p.color}">
                         <i class="fa-solid ${p.icon}"></i>
                     </div>
-                    <input type="text" value="${p.name}" onchange="updatePlayerName(${idx}, this.value)" placeholder="Spieler Name" class="flex-1 bg-slate-900/60 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500">
+                    <input type="text" value="${p.name}" onchange="updatePlayerName(${idx}, this.value)" placeholder="Spielername" class="flex-1 bg-slate-900/60 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500">
                     ${playerInputsData.length > 2 ? `
                         <button onclick="removePlayerInput(${idx})" class="p-2 text-red-400 hover:text-red-300">
                             <i class="fa-solid fa-trash-can"></i>
@@ -707,11 +707,11 @@
                 bodyEl.innerHTML = `<strong class="text-pink-400">${isTruth ? 'WAHRHEIT:' : 'PFLICHT:'}</strong><br>${cardText}`;
                 penaltyBtn.classList.remove('hidden');
             } else if (tile.type === 'drink') {
-                bodyEl.innerHTML = `${player.name}, trinke <strong class="text-pink-400">${tile.sips} Schluck(e)</strong>!`;
+                bodyEl.innerHTML = `${player.name}, trinke <strong class="text-pink-400">${tile.sips} ${tile.sips === 1 ? 'Schluck' : 'Schlucke'}</strong>!`;
                 player.sips += tile.sips;
                 playSound('drink');
             } else if (tile.type === 'give') {
-                bodyEl.innerHTML = `${player.name}, bestimme wer die Schlücke trinken muss!`;
+                bodyEl.innerHTML = `${player.name}, bestimme, wer die Schlucke trinken muss!`;
             } else if (tile.type === 'special' && tile.id === 14) { // Swap places
                 // Find leader
                 const leader = [...players].sort((a,b) => b.position - a.position)[0];
@@ -729,7 +729,7 @@
                 player.position = Math.min(BOARD_TILES.length - 1, player.position + 2);
                 updatePlayerTokensOnBoard();
             } else if (tile.type === 'finish') {
-                bodyEl.innerHTML = `🏆 🎉 HRZLICHEN GLÜCKWUNSCH! ${player.name} HAT DAS SPIEL GEWONNEN!`;
+                bodyEl.innerHTML = `🏆 🎉 Herzlichen Glückwunsch, ${player.name}! Du hast gewonnen!`;
                 triggerConfetti();
                 playSound('win');
             } else {
@@ -765,7 +765,7 @@
         function applyPenalty() {
             const curPlayer = players[currentPlayerIdx];
             curPlayer.sips += 2;
-            logMessage(`${curPlayer.name} hat die Aufgabe verweigert (+2 Strafschlücke).`);
+            logMessage(`${curPlayer.name} hat die Aufgabe abgelehnt (+2 Strafschlucke).`);
             playSound('drink');
             closeModal();
         }
