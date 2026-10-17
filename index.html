@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Drinkopoly Ultimate - Partyspiel</title>
+    <title>Das Trinkspiel!</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -154,7 +154,7 @@
             </div>
             <div>
                 <h1 class="font-display text-xl md:text-2xl tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400">
-                    DRINKOPOLY
+                    Das Trinkspiel!
                 </h1>
                 <p class="text-xs text-slate-400 font-light hidden sm:block">Das ultimative Party-Erlebnis</p>
             </div>
@@ -184,6 +184,27 @@
                 <div class="text-center mb-8">
                     <h2 class="font-display text-3xl md:text-4xl text-white mb-2 tracking-wide">Spieler vorbereiten</h2>
                     <p class="text-slate-400 text-sm">Füge 2 bis 8 Mitspielende hinzu, gib Namen ein und wähle pro Person optional ein Geschlecht.</p>
+                </div>
+
+                <div class="mb-6">
+                    <span class="block text-xs font-semibold uppercase tracking-widest text-slate-400 mb-2">Spielmodus</span>
+                    <div class="grid grid-cols-2 gap-2" role="group" aria-label="Spielmodus auswählen">
+                        <button id="classic-mode-btn" type="button" aria-pressed="true" onclick="setGameMode('classic')" class="rounded-xl border border-cyan-400 bg-cyan-400 px-4 py-3 text-sm font-bold text-slate-950 transition-colors">
+                            Klassisch
+                        </button>
+                        <button id="adult-mode-btn" type="button" aria-pressed="false" onclick="setGameMode('18plus')" class="rounded-xl border border-white/10 glass-card px-4 py-3 text-sm font-bold text-slate-300 transition-colors">
+                            18+
+                        </button>
+                    </div>
+                    <div id="adult-level-selector" class="hidden mt-4" role="group" aria-label="18+-Stufe auswählen">
+                        <span class="block text-xs font-semibold text-slate-400 mb-2">Stufe</span>
+                        <div class="grid grid-cols-4 gap-2">
+                            <button type="button" data-adult-level="1" aria-pressed="true" onclick="setAdultLevel(1)" class="adult-level-btn rounded-lg border border-pink-400 bg-pink-400 py-2 text-sm font-bold text-slate-950 transition-colors">1</button>
+                            <button type="button" data-adult-level="2" aria-pressed="false" onclick="setAdultLevel(2)" class="adult-level-btn rounded-lg border border-white/10 glass-card py-2 text-sm font-semibold text-slate-300 transition-colors">2</button>
+                            <button type="button" data-adult-level="3" aria-pressed="false" onclick="setAdultLevel(3)" class="adult-level-btn rounded-lg border border-white/10 glass-card py-2 text-sm font-semibold text-slate-300 transition-colors">3</button>
+                            <button type="button" data-adult-level="4" aria-pressed="false" onclick="setAdultLevel(4)" class="adult-level-btn rounded-lg border border-white/10 glass-card py-2 text-sm font-semibold text-slate-300 transition-colors">4</button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Player Registration Form -->
@@ -217,6 +238,7 @@
                         <div>
                             <span class="text-xs uppercase tracking-widest text-slate-400 font-semibold">Am Zug</span>
                             <h3 id="active-player-name" class="font-display text-xl text-white">Spieler 1</h3>
+                            <span id="active-game-mode" class="text-xs text-cyan-300">Klassisch</span>
                         </div>
                     </div>
 
@@ -267,7 +289,7 @@
                         <i class="fa-solid fa-list-ul text-cyan-400 mr-2"></i> Spielprotokoll
                     </h3>
                     <div id="game-log" class="flex-1 space-y-2 overflow-y-auto text-xs text-slate-300 max-h-56 pr-1 font-mono">
-                        <div class="text-slate-500 italic">Willkommen bei Drinkopoly! Würfelt, um zu beginnen.</div>
+                        <div class="text-slate-500 italic">Willkommen! Würfelt, um zu beginnen.</div>
                     </div>
                 </div>
 
@@ -458,6 +480,8 @@
         let currentPlayerIdx = 0;
         let isRolling = false;
         let pendingAction = null;
+        let selectedGameMode = 'classic';
+        let selectedAdultLevel = 1;
 
         // Start with two unnamed players
         let playerInputsData = [
@@ -532,6 +556,45 @@
             playerInputsData[idx].gender = gender;
         }
 
+        function setGameMode(mode) {
+            selectedGameMode = mode;
+            const isClassic = mode === 'classic';
+            const classicButton = document.getElementById('classic-mode-btn');
+            const adultButton = document.getElementById('adult-mode-btn');
+
+            classicButton.setAttribute('aria-pressed', String(isClassic));
+            adultButton.setAttribute('aria-pressed', String(!isClassic));
+            classicButton.classList.toggle('bg-cyan-400', isClassic);
+            classicButton.classList.toggle('text-slate-950', isClassic);
+            classicButton.classList.toggle('border-cyan-400', isClassic);
+            classicButton.classList.toggle('glass-card', !isClassic);
+            classicButton.classList.toggle('text-slate-300', !isClassic);
+            classicButton.classList.toggle('border-white/10', !isClassic);
+            adultButton.classList.toggle('bg-pink-400', !isClassic);
+            adultButton.classList.toggle('text-slate-950', !isClassic);
+            adultButton.classList.toggle('border-pink-400', !isClassic);
+            adultButton.classList.toggle('glass-card', isClassic);
+            adultButton.classList.toggle('text-slate-300', isClassic);
+            adultButton.classList.toggle('border-white/10', isClassic);
+            document.getElementById('adult-level-selector').classList.toggle('hidden', isClassic);
+        }
+
+        function setAdultLevel(level) {
+            selectedAdultLevel = level;
+            document.querySelectorAll('.adult-level-btn').forEach(button => {
+                const isSelected = Number(button.dataset.adultLevel) === level;
+                button.setAttribute('aria-pressed', String(isSelected));
+                button.classList.toggle('bg-pink-400', isSelected);
+                button.classList.toggle('text-slate-950', isSelected);
+                button.classList.toggle('border-pink-400', isSelected);
+                button.classList.toggle('font-bold', isSelected);
+                button.classList.toggle('glass-card', !isSelected);
+                button.classList.toggle('text-slate-300', !isSelected);
+                button.classList.toggle('border-white/10', !isSelected);
+                button.classList.toggle('font-semibold', !isSelected);
+            });
+        }
+
         function updatePlayerColor(idx, color) {
             playerInputsData[idx].color = color;
             document.getElementById(`player-avatar-${idx}`).style.backgroundColor = color;
@@ -558,6 +621,9 @@
 
             document.getElementById('setup-screen').classList.add('hidden');
             document.getElementById('game-screen').classList.remove('hidden');
+            document.getElementById('active-game-mode').innerText = selectedGameMode === 'classic'
+                ? 'Klassisch'
+                : `18+ · Stufe ${selectedAdultLevel}`;
 
             renderBoard();
             updateDashboard();
@@ -783,7 +849,9 @@
                 playSound('win');
             } else {
                 bodyEl.innerHTML = tile.desc;
-                if (tile.sips) player.sips += tile.sips;
+                if (tile.sips && !(selectedGameMode === 'classic' && tile.type === 'bonus')) {
+                    player.sips += tile.sips;
+                }
             }
 
             // Show Modal
@@ -877,7 +945,7 @@
 
             // Check if game won
             if (players[currentPlayerIdx].position >= BOARD_TILES.length - 1) {
-                logMessage(`🏆 ${players[currentPlayerIdx].name} hat Drinkopoly gewonnen!`);
+                logMessage(`🏆 ${players[currentPlayerIdx].name} hat „Das Trinkspiel!“ gewonnen!`);
                 return;
             }
 
