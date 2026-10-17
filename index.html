@@ -181,21 +181,24 @@
                 <div class="absolute -bottom-24 -left-24 w-60 h-60 bg-pink-600/20 rounded-full blur-3xl pointer-events-none"></div>
 
                 <div class="text-center mb-8">
-                    <h2 class="font-display text-3xl md:text-4xl text-white mb-2 tracking-wide">Spieler vorbereiten</h2>
-                    <p class="text-slate-400 text-sm">Füge 2 bis 10 Mitspielende hinzu, gib Namen ein und wähle pro Person optional ein Geschlecht.</p>
+                    <h2 id="setup-title" class="font-display text-3xl md:text-4xl text-white mb-2 tracking-wide">Spieler vorbereiten</h2>
+                    <p id="setup-description" class="text-slate-400 text-sm">Füge 2 bis 10 Mitspielende hinzu, gib Namen ein und wähle pro Person optional ein Geschlecht.</p>
                 </div>
 
                 <div class="mb-6">
                     <span class="block text-xs font-semibold uppercase tracking-widest text-slate-400 mb-2">Spielmodus</span>
-                    <div class="grid grid-cols-2 gap-2" role="group" aria-label="Spielmodus auswählen">
+                    <div class="grid grid-cols-3 gap-2" role="group" aria-label="Spielmodus auswählen">
                         <button id="classic-mode-btn" type="button" aria-pressed="true" onclick="setGameMode('classic')" class="rounded-xl border border-cyan-400 bg-cyan-400 px-4 py-3 text-sm font-bold text-slate-950 transition-colors">
                             Klassisch
                         </button>
                         <button id="adult-mode-btn" type="button" aria-pressed="false" onclick="setGameMode('18plus')" class="rounded-xl border border-white/10 glass-card px-4 py-3 text-sm font-bold text-slate-300 transition-colors">
                             18+
                         </button>
+                        <button id="companion-mode-btn" type="button" aria-pressed="false" onclick="setGameMode('companion')" class="rounded-xl border border-white/10 glass-card px-4 py-3 text-sm font-bold text-slate-300 transition-colors">
+                            Companion
+                        </button>
                     </div>
-                    <div id="adult-level-selector" class="hidden mt-4" role="group" aria-label="18+-Stufen auswählen">
+                    <div id="adult-level-selector" class="hidden mt-4" role="group" aria-label="Aufgabenstufen auswählen">
                         <span class="block text-xs font-semibold text-slate-400 mb-2">Stufen</span>
                         <div class="grid grid-cols-4 gap-2">
                             <button type="button" data-adult-level="1" aria-pressed="true" onclick="setAdultLevel(1)" class="adult-level-btn rounded-lg border border-pink-400 bg-pink-400 py-2 text-sm font-bold text-slate-950 transition-colors">1</button>
@@ -204,6 +207,9 @@
                             <button type="button" data-adult-level="4" aria-pressed="false" onclick="setAdultLevel(4)" class="adult-level-btn rounded-lg border border-white/10 glass-card py-2 text-sm font-semibold text-slate-300 transition-colors">4</button>
                         </div>
                     </div>
+                    <a id="companion-pdf-link" href="DasTrinkspiel.pdf" download class="hidden mt-4 items-center justify-center gap-2 rounded-xl border border-cyan-400/30 bg-cyan-500/10 px-4 py-3 text-sm font-semibold text-cyan-200 hover:bg-cyan-500/20">
+                        <i class="fa-solid fa-file-pdf"></i> Spielfeld-PDF herunterladen
+                    </a>
                 </div>
 
                 <!-- Player Registration Form -->
@@ -215,7 +221,7 @@
                     <button onclick="addPlayerInput()" id="add-player-btn" class="flex-1 py-3 px-4 rounded-xl glass-card hover:bg-white/10 text-cyan-400 border border-cyan-500/30 font-semibold text-sm flex items-center justify-center gap-2 transition-all">
                         <i class="fa-solid fa-user-plus"></i> Spieler hinzufügen
                     </button>
-                    <button onclick="startGame()" class="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-base shadow-lg shadow-purple-900/50 flex items-center justify-center gap-2 transition-all transform active:scale-95">
+                    <button id="start-game-btn" onclick="startGame()" class="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-base shadow-lg shadow-purple-900/50 flex items-center justify-center gap-2 transition-all transform active:scale-95">
                         <i class="fa-solid fa-play"></i> Spiel starten
                     </button>
                 </div>
@@ -312,6 +318,17 @@
                 </div>
 
             </div>
+        </section>
+
+        <section id="companion-screen" class="hidden flex-1 max-w-3xl w-full mx-auto min-h-[70vh] flex-col items-center justify-center gap-8 py-10 text-center">
+            <div class="flex w-full items-center justify-between">
+                <span id="companion-level-indicator" class="text-sm font-semibold uppercase tracking-widest text-cyan-300"></span>
+                <button type="button" onclick="returnToSetup()" class="rounded-lg border border-white/10 px-3 py-2 text-sm text-slate-300 hover:bg-white/10">Zurück</button>
+            </div>
+            <div id="companion-action" aria-live="polite" class="flex min-h-48 w-full items-center justify-center rounded-2xl border border-white/10 bg-slate-900/50 p-8 text-xl leading-relaxed text-white md:text-2xl"></div>
+            <button id="companion-ask-btn" type="button" onclick="drawCompanionQuestion()" class="min-h-32 w-full max-w-xl rounded-3xl border border-cyan-300/50 bg-gradient-to-br from-cyan-500 to-blue-600 px-8 py-8 text-3xl font-black text-white shadow-2xl shadow-cyan-900/40 transition-transform hover:scale-[1.02] active:scale-[0.98]">
+                <i class="fa-solid fa-comment-dots mr-3"></i>Frag' mich!
+            </button>
         </section>
     </main>
 
@@ -585,6 +602,7 @@
         let previewSourceTileId = null;
         let selectedGameMode = 'classic';
         let selectedAdultLevels = new Set([1]);
+        let lastCompanionQuestion = null;
 
         // Start with two unnamed players
         let playerInputsData = [
@@ -659,24 +677,45 @@
         function setGameMode(mode) {
             selectedGameMode = mode;
             const isClassic = mode === 'classic';
+            const isAdult = mode === '18plus';
+            const isCompanion = mode === 'companion';
             const classicButton = document.getElementById('classic-mode-btn');
             const adultButton = document.getElementById('adult-mode-btn');
+            const companionButton = document.getElementById('companion-mode-btn');
 
             classicButton.setAttribute('aria-pressed', String(isClassic));
-            adultButton.setAttribute('aria-pressed', String(!isClassic));
+            adultButton.setAttribute('aria-pressed', String(isAdult));
+            companionButton.setAttribute('aria-pressed', String(isCompanion));
             classicButton.classList.toggle('bg-cyan-400', isClassic);
             classicButton.classList.toggle('text-slate-950', isClassic);
             classicButton.classList.toggle('border-cyan-400', isClassic);
             classicButton.classList.toggle('glass-card', !isClassic);
             classicButton.classList.toggle('text-slate-300', !isClassic);
             classicButton.classList.toggle('border-white/10', !isClassic);
-            adultButton.classList.toggle('bg-pink-400', !isClassic);
-            adultButton.classList.toggle('text-slate-950', !isClassic);
-            adultButton.classList.toggle('border-pink-400', !isClassic);
-            adultButton.classList.toggle('glass-card', isClassic);
-            adultButton.classList.toggle('text-slate-300', isClassic);
-            adultButton.classList.toggle('border-white/10', isClassic);
+            adultButton.classList.toggle('bg-pink-400', isAdult);
+            adultButton.classList.toggle('text-slate-950', isAdult);
+            adultButton.classList.toggle('border-pink-400', isAdult);
+            adultButton.classList.toggle('glass-card', !isAdult);
+            adultButton.classList.toggle('text-slate-300', !isAdult);
+            adultButton.classList.toggle('border-white/10', !isAdult);
+            companionButton.classList.toggle('bg-emerald-400', isCompanion);
+            companionButton.classList.toggle('text-slate-950', isCompanion);
+            companionButton.classList.toggle('border-emerald-400', isCompanion);
+            companionButton.classList.toggle('glass-card', !isCompanion);
+            companionButton.classList.toggle('text-slate-300', !isCompanion);
+            companionButton.classList.toggle('border-white/10', !isCompanion);
             document.getElementById('adult-level-selector').classList.toggle('hidden', isClassic);
+            document.getElementById('player-inputs').classList.toggle('hidden', isCompanion);
+            document.getElementById('add-player-btn').classList.toggle('hidden', isCompanion);
+            document.getElementById('companion-pdf-link').classList.toggle('hidden', !isCompanion);
+            document.getElementById('companion-pdf-link').classList.toggle('flex', isCompanion);
+            document.getElementById('setup-title').innerText = isCompanion ? 'Companion' : 'Spieler vorbereiten';
+            document.getElementById('setup-description').innerText = isCompanion
+                ? 'Wähle die Aufgabenstufen für dein gedrucktes Spielfeld.'
+                : 'Füge 2 bis 10 Mitspielende hinzu, gib Namen ein und wähle pro Person optional ein Geschlecht.';
+            document.getElementById('start-game-btn').innerHTML = isCompanion
+                ? '<i class="fa-solid fa-play"></i> Companion starten'
+                : '<i class="fa-solid fa-play"></i> Spiel starten';
         }
 
         function setAdultLevel(level) {
@@ -777,10 +816,40 @@
             if (!adultQuestions.length) throw new Error('Die Aufgaben-XML enthält keine gültigen 18+-Aufgaben.');
         }
 
-        function getRandomAdultQuestion(levels) {
-            const eligibleQuestions = adultQuestions.filter(question => levels.has(question.level));
+        function getRandomAdultQuestion(levels, previousQuestion = null) {
+            let eligibleQuestions = adultQuestions.filter(question => levels.has(question.level));
+            if (eligibleQuestions.length > 1 && previousQuestion) {
+                const withoutPrevious = eligibleQuestions.filter(question => question !== previousQuestion);
+                if (withoutPrevious.length) eligibleQuestions = withoutPrevious;
+            }
             if (!eligibleQuestions.length) return null;
             return eligibleQuestions[Math.floor(Math.random() * eligibleQuestions.length)];
+        }
+
+        function startCompanionMode() {
+            lastCompanionQuestion = null;
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('companion-screen').classList.remove('hidden');
+            document.getElementById('companion-level-indicator').innerText = `Stufen ${[...selectedAdultLevels].sort().join(', ')}`;
+            document.getElementById('companion-action').innerText = '';
+            document.getElementById('companion-ask-btn').focus();
+        }
+
+        function drawCompanionQuestion() {
+            const question = getRandomAdultQuestion(selectedAdultLevels, lastCompanionQuestion);
+            if (!question) {
+                document.getElementById('companion-action').innerText = 'Für die ausgewählten Stufen wurden keine Aufgaben gefunden.';
+                return;
+            }
+
+            lastCompanionQuestion = question;
+            document.getElementById('companion-action').innerText = `Stufe ${question.level}\n\n${question.text}`;
+        }
+
+        function returnToSetup() {
+            document.getElementById('companion-screen').classList.add('hidden');
+            document.getElementById('setup-screen').classList.remove('hidden');
         }
 
         async function startGame() {
@@ -789,13 +858,18 @@
             pendingBranchRemaining = null;
             pendingExtraRoll = false;
             pendingAdultSelection = null;
-            if (selectedGameMode === '18plus' && !adultQuestions.length) {
+            if (selectedGameMode !== 'classic' && !adultQuestions.length) {
                 try {
                     await loadAdultQuestions();
                 } catch (error) {
-                    alert(`Die 18+-Aufgaben konnten nicht geladen werden. ${error.message}`);
+                    alert(`Die Companion-Aufgaben konnten nicht geladen werden. ${error.message}`);
                     return;
                 }
+            }
+
+            if (selectedGameMode === 'companion') {
+                startCompanionMode();
+                return;
             }
 
             BOARD_TILES = selectedGameMode === 'classic' ? CLASSIC_BOARD_TILES : ADULT_BOARD_TILES;
@@ -1610,6 +1684,7 @@
         function resetGamePrompt() {
             if (confirm("Möchtest du das aktuelle Spiel wirklich abbrechen und neu starten?")) {
                 document.getElementById('game-screen').classList.add('hidden');
+                document.getElementById('companion-screen').classList.add('hidden');
                 document.getElementById('setup-screen').classList.remove('hidden');
             }
         }
