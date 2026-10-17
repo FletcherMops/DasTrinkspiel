@@ -183,7 +183,7 @@
 
                 <div class="text-center mb-8">
                     <h2 class="font-display text-3xl md:text-4xl text-white mb-2 tracking-wide">Spieler vorbereiten</h2>
-                    <p class="text-slate-400 text-sm">Füge 2 bis 8 Mitspielende hinzu und wähle ihre Farben und Avatare.</p>
+                    <p class="text-slate-400 text-sm">Füge 2 bis 8 Mitspielende hinzu, gib Namen ein und wähle pro Person optional ein Geschlecht.</p>
                 </div>
 
                 <!-- Player Registration Form -->
@@ -277,7 +277,7 @@
 
     <!-- ACTION MODAL (Pops up on tile landing) -->
     <div id="action-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
-        <div id="action-card" class="w-full max-w-md glass-panel rounded-3xl p-6 border border-purple-500/30 shadow-2xl transform scale-90 transition-transform duration-300 flex flex-col items-center text-center relative overflow-hidden">
+        <div id="action-card" class="w-full max-w-md max-h-[90vh] overflow-y-auto glass-panel rounded-3xl p-6 border border-purple-500/30 shadow-2xl transform scale-90 transition-transform duration-300 flex flex-col items-center text-center relative overflow-x-hidden">
             
             <div id="modal-icon-bg" class="w-20 h-20 rounded-3xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center mb-4 text-3xl text-purple-400 shadow-neon-purple">
                 <i id="modal-icon" class="fa-solid fa-glass-water"></i>
@@ -291,6 +291,11 @@
             
             <div id="modal-body" class="text-slate-300 text-sm md:text-base mb-6 leading-relaxed bg-white/5 p-4 rounded-2xl border border-white/5 w-full">
                 Anweisung für den aktuellen Spieler.
+            </div>
+
+            <div id="give-drinks-controls" class="hidden w-full mb-6 text-left">
+                <div id="give-drinks-summary" class="text-sm text-slate-300 mb-3"></div>
+                <div id="give-drinks-players" class="space-y-2 max-h-56 overflow-y-auto"></div>
             </div>
 
             <div class="flex gap-3 w-full">
@@ -393,14 +398,14 @@
 
         /* --- GAME DATA & TILES CONFIGURATION --- */
         const AVATARS = [
-            { icon: 'fa-beer-mug-empty', color: '#a855f7' }, // Purple
-            { icon: 'fa-cocktail', color: '#ec4899' },      // Pink
-            { icon: 'fa-wine-glass', color: '#06b6d4' },    // Cyan
-            { icon: 'fa-champagne-glasses', color: '#f59e0b' },// Amber
-            { icon: 'fa-whiskey-glass', color: '#10b981' }, // Emerald
-            { icon: 'fa-martini-glass-citrus', color: '#ef4444' }, // Red
-            { icon: 'fa-skull', color: '#6366f1' },         // Indigo
-            { icon: 'fa-bolt', color: '#eab308' }            // Yellow
+            { icon: 'fa-beer-mug-empty', label: 'Bierkrug', color: '#a855f7' },
+            { icon: 'fa-cocktail', label: 'Cocktailglas', color: '#ec4899' },
+            { icon: 'fa-wine-glass', label: 'Weinglas', color: '#06b6d4' },
+            { icon: 'fa-champagne-glasses', label: 'Sektgläser', color: '#f59e0b' },
+            { icon: 'fa-whiskey-glass', label: 'Whiskeyglas', color: '#10b981' },
+            { icon: 'fa-martini-glass-citrus', label: 'Martiniglas', color: '#ef4444' },
+            { icon: 'fa-skull', label: 'Totenkopf', color: '#6366f1' },
+            { icon: 'fa-bolt', label: 'Blitz', color: '#eab308' }
         ];
 
         // 24 Board Tiles
@@ -408,13 +413,13 @@
             { id: 0, title: "Start", type: "start", icon: "fa-flag-checkered", desc: "Willkommen auf dem Feld! Alle trinken 1 Schluck zum Aufwärmen.", sips: 1 },
             { id: 1, title: "1 Schluck", type: "drink", icon: "fa-whiskey-glass", desc: "Nimm 1 Schluck von deinem Getränk.", sips: 1 },
             { id: 2, title: "Wahrheit oder Pflicht", type: "tod", icon: "fa-masks-theater", desc: "Wähle Wahrheit oder Pflicht! Wenn du ablehnst, trinkst du 2 Strafschlucke." },
-            { id: 3, title: "Verteile 2", type: "give", icon: "fa-hand-holding-droplet", desc: "Bestimme eine Person, die 2 Schlucke trinken muss." },
+            { id: 3, title: "Verteile 2", type: "give", icon: "fa-hand-holding-droplet", desc: "Verteile genau 2 Schlucke auf beliebige Mitspielende.", sips: 2 },
             { id: 4, title: "Kategorien", type: "minigame", icon: "fa-list-check", desc: "Nenne eine Kategorie (z. B. Automarken). Reihum nennt jede Person einen Begriff. Wer zögert oder etwas wiederholt, trinkt 2 Schlucke." },
             { id: 5, title: "Wasserpause!", type: "bonus", icon: "fa-bottle-water", desc: "Trinke einen großen Schluck Wasser. Erholung muss sein!" },
             { id: 6, title: "Gefängnis / Kater", type: "jail", icon: "fa-dungeon", desc: "Du setzt eine Runde aus oder trinkst 3 Schlucke, um dich freizukaufen!" },
             { id: 7, title: "2 Schlucke", type: "drink", icon: "fa-beer-mug-empty", desc: "Nimm 2 Schlucke.", sips: 2 },
             { id: 8, title: "Reim-Zeit", type: "minigame", icon: "fa-music", desc: "Nenne ein Wort. Reihum nennt jede Person ein Wort, das sich darauf reimt. Wer zögert oder ein Wort wiederholt, trinkt 2 Schlucke." },
-            { id: 9, title: "Verteile 3", type: "give", icon: "fa-hand-holding-heart", desc: "Verteile 3 Schlucke beliebig auf deine Mitspielenden." },
+            { id: 9, title: "Verteile 3", type: "give", icon: "fa-hand-holding-heart", desc: "Verteile genau 3 Schlucke auf beliebige Mitspielende.", sips: 3 },
             { id: 10, title: "Die Bar", type: "bar", icon: "fa-champagne-glasses", desc: "An der Bar! Alle Mitspielenden stoßen an und trinken einen Schluck!" },
             { id: 11, title: "Ich habe noch nie …", type: "minigame", icon: "fa-comments", desc: "Sage: „Ich habe noch nie …“ Alle, die das schon einmal getan haben, trinken einen Schluck." },
             { id: 12, title: "3 Schlucke", type: "drink", icon: "fa-wine-glass", desc: "Gönn dir 3 Schlucke!", sips: 3 },
@@ -424,8 +429,8 @@
             { id: 16, title: "Abkürzung", type: "special", icon: "fa-bolt", desc: "Glück gehabt! Rücke sofort 2 Felder vor." },
             { id: 17, title: "Wahrheit oder Pflicht", type: "tod", icon: "fa-comments", desc: "Wähle Wahrheit oder Pflicht!" },
             { id: 18, title: "Ex oder nix", type: "drink", icon: "fa-skull-crossbones", desc: "Oha! Trinke 4 Schlucke oder leere dein Glas auf Ex!" },
-            { id: 19, title: "Männer trinken", type: "group", icon: "fa-mars", desc: "Alle Männer trinken einen Schluck!" },
-            { id: 20, title: "Frauen trinken", type: "group", icon: "fa-venus", desc: "Alle Frauen trinken einen Schluck!" },
+            { id: 19, title: "Männer trinken", type: "group", icon: "fa-mars", targetGender: "male", desc: "Alle Personen mit der Auswahl „Männlich“, „Divers“ oder „Keine Angabe“ trinken einen Schluck!" },
+            { id: 20, title: "Frauen trinken", type: "group", icon: "fa-venus", targetGender: "female", desc: "Alle Personen mit der Auswahl „Weiblich“, „Divers“ oder „Keine Angabe“ trinken einen Schluck!" },
             { id: 21, title: "Trinkpartner wählen", type: "rule", icon: "fa-link", desc: "Wähle einen Trinkpartner. Wenn du trinken musst, trinkt dein Partner ebenfalls." },
             { id: 22, title: "Letzte Hürde", type: "drink", icon: "fa-fire", desc: "Knapp vor dem Ziel! Trinke 3 Schlucke." },
             { id: 23, title: "ZIEL!", type: "finish", icon: "fa-trophy", desc: "Herzlichen Glückwunsch! Du hast das Ziel erreicht und gewonnen!" }
@@ -454,11 +459,10 @@
         let isRolling = false;
         let pendingAction = null;
 
-        // Default setup with 3 players
+        // Start with two unnamed players
         let playerInputsData = [
-            { name: "Alex", color: AVATARS[0].color, icon: AVATARS[0].icon },
-            { name: "Sam", color: AVATARS[1].color, icon: AVATARS[1].icon },
-            { name: "Jordan", color: AVATARS[2].color, icon: AVATARS[2].icon }
+            { name: "", gender: "", color: AVATARS[0].color, icon: AVATARS[0].icon },
+            { name: "", gender: "", color: AVATARS[1].color, icon: AVATARS[1].icon }
         ];
 
         /* --- SETUP FUNCTIONS --- */
@@ -468,14 +472,32 @@
 
             playerInputsData.forEach((p, idx) => {
                 const row = document.createElement('div');
-                row.className = "flex items-center gap-3 p-2 rounded-2xl glass-card border border-white/5";
+                row.className = "grid grid-cols-[2.5rem_minmax(0,1fr)] sm:grid-cols-[2.5rem_minmax(0,1fr)_10rem_auto] items-center gap-3 p-2 rounded-2xl glass-card border border-white/5";
                 row.innerHTML = `
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg font-bold" style="background-color: ${p.color}">
-                        <i class="fa-solid ${p.icon}"></i>
+                    <div id="player-avatar-${idx}" class="row-span-2 sm:row-span-1 w-10 h-10 rounded-xl flex items-center justify-center text-white text-lg font-bold" style="background-color: ${p.color}">
+                        <i id="player-icon-${idx}" class="fa-solid ${p.icon}"></i>
                     </div>
-                    <input type="text" value="${p.name}" onchange="updatePlayerName(${idx}, this.value)" placeholder="Spielername" class="flex-1 bg-slate-900/60 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500">
+                    <input type="text" value="${p.name}" onchange="updatePlayerName(${idx}, this.value)" aria-label="Name für Spieler ${idx + 1}" placeholder="Name" class="min-w-0 bg-slate-900/60 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500">
+                    <select onchange="updatePlayerGender(${idx}, this.value)" aria-label="Geschlecht für Spieler ${idx + 1}" class="w-full bg-slate-900/60 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500">
+                        <option value="" ${p.gender === '' ? 'selected' : ''}>Keine Angabe</option>
+                        <option value="male" ${p.gender === 'male' ? 'selected' : ''}>Männlich</option>
+                        <option value="female" ${p.gender === 'female' ? 'selected' : ''}>Weiblich</option>
+                        <option value="diverse" ${p.gender === 'diverse' ? 'selected' : ''}>Divers</option>
+                    </select>
+                    <div class="col-span-2 sm:col-span-4 flex flex-wrap items-center gap-3">
+                        <label class="flex items-center gap-2 text-xs text-slate-400">
+                            Farbe
+                            <input type="color" value="${p.color}" oninput="updatePlayerColor(${idx}, this.value)" aria-label="Farbe für Spieler ${idx + 1}" class="h-9 w-11 cursor-pointer rounded-lg border border-white/10 bg-slate-900 p-1">
+                        </label>
+                        <label class="flex min-w-0 items-center gap-2 text-xs text-slate-400">
+                            Symbol
+                            <select onchange="updatePlayerIcon(${idx}, this.value)" aria-label="Symbol für Spieler ${idx + 1}" class="min-w-0 bg-slate-900/60 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-purple-500">
+                                ${AVATARS.map(avatar => `<option value="${avatar.icon}" ${p.icon === avatar.icon ? 'selected' : ''}>${avatar.label}</option>`).join('')}
+                            </select>
+                        </label>
+                    </div>
                     ${playerInputsData.length > 2 ? `
-                        <button onclick="removePlayerInput(${idx})" class="p-2 text-red-400 hover:text-red-300">
+                        <button onclick="removePlayerInput(${idx})" aria-label="Spieler ${idx + 1} entfernen" class="row-start-4 col-start-2 justify-self-end p-2 text-red-400 hover:text-red-300 sm:row-start-1 sm:col-start-4">
                             <i class="fa-solid fa-trash-can"></i>
                         </button>
                     ` : ''}
@@ -488,7 +510,8 @@
             if (playerInputsData.length >= 8) return;
             const avatar = AVATARS[playerInputsData.length % AVATARS.length];
             playerInputsData.push({
-                name: `Spieler ${playerInputsData.length + 1}`,
+                name: "",
+                gender: "",
                 color: avatar.color,
                 icon: avatar.icon
             });
@@ -502,7 +525,21 @@
         }
 
         function updatePlayerName(idx, val) {
-            playerInputsData[idx].name = val.trim() || `Spieler ${idx + 1}`;
+            playerInputsData[idx].name = val.trim();
+        }
+
+        function updatePlayerGender(idx, gender) {
+            playerInputsData[idx].gender = gender;
+        }
+
+        function updatePlayerColor(idx, color) {
+            playerInputsData[idx].color = color;
+            document.getElementById(`player-avatar-${idx}`).style.backgroundColor = color;
+        }
+
+        function updatePlayerIcon(idx, icon) {
+            playerInputsData[idx].icon = icon;
+            document.getElementById(`player-icon-${idx}`).className = `fa-solid ${icon}`;
         }
 
         /* --- GAME START & INITIALIZATION --- */
@@ -510,7 +547,8 @@
             initAudio();
             players = playerInputsData.map((p, idx) => ({
                 id: idx,
-                name: p.name,
+                name: p.name.trim() || `Spieler ${idx + 1}`,
+                gender: p.gender,
                 color: p.color,
                 icon: p.icon,
                 position: 0,
@@ -691,11 +729,14 @@
             const iconEl = document.getElementById('modal-icon');
             const penaltyBtn = document.getElementById('modal-penalty-btn');
             const actionBtn = document.getElementById('modal-action-btn');
+            const giveControls = document.getElementById('give-drinks-controls');
 
             titleEl.innerText = tile.title;
             iconEl.className = `fa-solid ${tile.icon}`;
             penaltyBtn.classList.add('hidden');
             actionBtn.innerText = "Erledigt!";
+            actionBtn.disabled = false;
+            giveControls.classList.add('hidden');
 
             // Handle special tile contents
             if (tile.type === 'tod') {
@@ -711,7 +752,15 @@
                 player.sips += tile.sips;
                 playSound('drink');
             } else if (tile.type === 'give') {
-                bodyEl.innerHTML = `${player.name}, bestimme, wer die Schlucke trinken muss!`;
+                bodyEl.innerText = `${player.name}, verteile genau ${tile.sips} Schlucke. Du kannst auch dich selbst auswählen.`;
+                actionBtn.innerText = "Schlucke verteilen";
+                giveControls.classList.remove('hidden');
+                renderGiveDrinkChoices();
+            } else if (tile.type === 'group') {
+                const drinkers = players.filter(p => p.gender === tile.targetGender || p.gender === 'diverse' || p.gender === '');
+                drinkers.forEach(p => p.sips++);
+                bodyEl.innerText = drinkers.length ? tile.desc : "Niemand hat dieses Geschlecht ausgewählt. Niemand muss trinken.";
+                if (drinkers.length) playSound('drink');
             } else if (tile.type === 'special' && tile.id === 14) { // Swap places
                 // Find leader
                 const leader = [...players].sort((a,b) => b.position - a.position)[0];
@@ -745,9 +794,82 @@
             updateDashboard();
         }
 
+        function renderGiveDrinkChoices() {
+            const container = document.getElementById('give-drinks-players');
+            const actionBtn = document.getElementById('modal-action-btn');
+            container.innerHTML = '';
+
+            players.forEach(player => {
+                const row = document.createElement('div');
+                row.className = "flex items-center gap-3 rounded-xl border border-white/10 bg-slate-900/50 px-3 py-2";
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = player.id;
+                checkbox.className = "h-4 w-4 accent-pink-500";
+                checkbox.setAttribute('aria-label', `${player.name} auswählen`);
+
+                const name = document.createElement('span');
+                name.className = "min-w-0 flex-1 truncate text-sm text-slate-100";
+                name.textContent = player.name;
+
+                const amount = document.createElement('input');
+                amount.type = 'number';
+                amount.min = '1';
+                amount.max = String(pendingAction.sips);
+                amount.step = '1';
+                amount.value = '1';
+                amount.disabled = true;
+                amount.setAttribute('aria-label', `Schlucke für ${player.name}`);
+                amount.className = "w-20 rounded-lg border border-white/10 bg-slate-950 px-2 py-1.5 text-center text-sm text-white disabled:opacity-40";
+
+                checkbox.addEventListener('change', () => {
+                    amount.disabled = !checkbox.checked;
+                    updateGiveDrinkTotal();
+                });
+                amount.addEventListener('input', updateGiveDrinkTotal);
+
+                row.append(checkbox, name, amount);
+                container.appendChild(row);
+            });
+
+            actionBtn.disabled = true;
+            updateGiveDrinkTotal();
+        }
+
+        function updateGiveDrinkTotal() {
+            const rows = [...document.querySelectorAll('#give-drinks-players > div')];
+            const selected = rows.filter(row => row.querySelector('input[type="checkbox"]').checked);
+            const amounts = selected.map(row => row.querySelector('input[type="number"]'));
+            const total = amounts.reduce((sum, input) => sum + (input.valueAsNumber || 0), 0);
+            const validAmounts = amounts.every(input => Number.isInteger(input.valueAsNumber) && input.valueAsNumber >= 1);
+            const required = pendingAction.sips;
+
+            document.getElementById('give-drinks-summary').innerText = `${total} von ${required} Schlucken verteilt`;
+            document.getElementById('modal-action-btn').disabled = total !== required || !validAmounts;
+        }
+
         function closeModal() {
             const modal = document.getElementById('action-modal');
             const card = document.getElementById('action-card');
+
+            if (pendingAction && pendingAction.type === 'give') {
+                const rows = [...document.querySelectorAll('#give-drinks-players > div')];
+                const selected = rows.filter(row => row.querySelector('input[type="checkbox"]').checked);
+                const allocations = selected.map(row => ({
+                    player: players.find(player => player.id === Number(row.querySelector('input[type="checkbox"]').value)),
+                    amount: row.querySelector('input[type="number"]').valueAsNumber
+                }));
+
+                if (allocations.reduce((sum, allocation) => sum + allocation.amount, 0) !== pendingAction.sips || allocations.some(allocation => !Number.isInteger(allocation.amount) || allocation.amount < 1)) return;
+
+                allocations.forEach(allocation => {
+                    allocation.player.sips += allocation.amount;
+                });
+                logMessage(`${players[currentPlayerIdx].name} hat Schlucke verteilt: ${allocations.map(allocation => `${allocation.player.name}: ${allocation.amount}`).join(', ')}.`);
+                playSound('drink');
+                updateDashboard();
+            }
             
             modal.classList.add('opacity-0', 'pointer-events-none');
             card.classList.remove('scale-100');
