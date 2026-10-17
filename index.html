@@ -195,8 +195,8 @@
                             18+
                         </button>
                     </div>
-                    <div id="adult-level-selector" class="hidden mt-4" role="group" aria-label="18+-Stufe auswählen">
-                        <span class="block text-xs font-semibold text-slate-400 mb-2">Stufe</span>
+                    <div id="adult-level-selector" class="hidden mt-4" role="group" aria-label="18+-Stufen auswählen">
+                        <span class="block text-xs font-semibold text-slate-400 mb-2">Stufen</span>
                         <div class="grid grid-cols-4 gap-2">
                             <button type="button" data-adult-level="1" aria-pressed="true" onclick="setAdultLevel(1)" class="adult-level-btn rounded-lg border border-pink-400 bg-pink-400 py-2 text-sm font-bold text-slate-950 transition-colors">1</button>
                             <button type="button" data-adult-level="2" aria-pressed="false" onclick="setAdultLevel(2)" class="adult-level-btn rounded-lg border border-white/10 glass-card py-2 text-sm font-semibold text-slate-300 transition-colors">2</button>
@@ -584,7 +584,7 @@
         let isTilePreview = false;
         let previewSourceTileId = null;
         let selectedGameMode = 'classic';
-        let selectedAdultLevel = 1;
+        let selectedAdultLevels = new Set([1]);
 
         // Start with two unnamed players
         let playerInputsData = [
@@ -680,9 +680,15 @@
         }
 
         function setAdultLevel(level) {
-            selectedAdultLevel = level;
+            if (selectedAdultLevels.has(level)) {
+                if (selectedAdultLevels.size === 1) return;
+                selectedAdultLevels.delete(level);
+            } else {
+                selectedAdultLevels.add(level);
+            }
+
             document.querySelectorAll('.adult-level-btn').forEach(button => {
-                const isSelected = Number(button.dataset.adultLevel) === level;
+                const isSelected = selectedAdultLevels.has(Number(button.dataset.adultLevel));
                 button.setAttribute('aria-pressed', String(isSelected));
                 button.classList.toggle('bg-pink-400', isSelected);
                 button.classList.toggle('text-slate-950', isSelected);
@@ -771,8 +777,8 @@
             if (!adultQuestions.length) throw new Error('Die Aufgaben-XML enthält keine gültigen 18+-Aufgaben.');
         }
 
-        function getRandomAdultQuestion(level) {
-            const eligibleQuestions = adultQuestions.filter(question => question.level === level);
+        function getRandomAdultQuestion(levels) {
+            const eligibleQuestions = adultQuestions.filter(question => levels.has(question.level));
             if (!eligibleQuestions.length) return null;
             return eligibleQuestions[Math.floor(Math.random() * eligibleQuestions.length)];
         }
@@ -811,7 +817,7 @@
             document.getElementById('game-screen').classList.remove('hidden');
             document.getElementById('active-game-mode').innerText = selectedGameMode === 'classic'
                 ? 'Klassisch'
-                : `18+ · Stufe ${selectedAdultLevel}`;
+                : `18+ · Stufen ${[...selectedAdultLevels].sort().join(', ')}`;
 
             renderBoard();
             updateDashboard();
@@ -891,7 +897,7 @@
                 iconEl.innerHTML = '';
             }
             document.getElementById('modal-body').innerText = selectedGameMode === '18plus' && tile.type === 'xmlTask'
-                ? `Eine zufällige Aufgabe aus Stufe ${selectedAdultLevel} wird gezogen.`
+                ? `Eine zufällige Aufgabe aus den Stufen ${[...selectedAdultLevels].sort().join(', ')} wird gezogen.`
                 : tile.desc;
             document.getElementById('modal-penalty-btn').classList.add('hidden');
             document.getElementById('give-drinks-controls').classList.add('hidden');
@@ -1206,10 +1212,11 @@
                     playSound('drink');
                     break;
                 case 'xmlTask': {
-                    const question = getRandomAdultQuestion(selectedAdultLevel);
+                    const selectedLevels = [...selectedAdultLevels].sort();
+                    const question = getRandomAdultQuestion(selectedAdultLevels);
                     bodyEl.innerText = question
-                        ? `Stufe ${selectedAdultLevel}\n${question.text}`
-                        : `Für Stufe ${selectedAdultLevel} wurden keine Aufgaben gefunden.`;
+                        ? `Stufe ${question.level}\n${question.text}`
+                        : `Für die Stufen ${selectedLevels.join(', ')} wurden keine Aufgaben gefunden.`;
                     break;
                 }
                 case 'neighborsSip': {
