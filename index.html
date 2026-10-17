@@ -294,7 +294,7 @@
                 <div class="glass-panel rounded-2xl p-4 border border-white/10 flex flex-col">
                     <h3 class="font-display text-slate-300 text-sm tracking-wider uppercase mb-3 flex items-center justify-between">
                         <span><i class="fa-solid fa-users text-purple-400 mr-2"></i> Rangliste</span>
-                        <span class="text-xs text-slate-500">Schlucke</span>
+                        <span class="text-xs text-slate-500">Zähler</span>
                     </h3>
                     <div id="players-list" class="space-y-2.5 max-h-60 overflow-y-auto pr-1">
                         <!-- Dynamic Player Score Item -->
@@ -338,11 +338,21 @@
                 <div id="give-drinks-players" class="space-y-2 max-h-56 overflow-y-auto"></div>
             </div>
 
+            <div id="adult-player-choice-controls" class="hidden w-full mb-6 text-left">
+                <div id="adult-player-choice-summary" class="text-sm text-slate-300 mb-3"></div>
+                <div id="adult-player-choice-list" class="space-y-2 max-h-56 overflow-y-auto"></div>
+            </div>
+
+            <div id="adult-decision-controls" class="hidden w-full mb-6 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <button type="button" onclick="resolveAdultDecision('shots')" class="rounded-xl border border-amber-400/40 bg-amber-500/15 px-3 py-3 text-sm font-semibold text-amber-200 hover:bg-amber-500/25">3 Shots trinken</button>
+                <button type="button" onclick="resolveAdultDecision('clothes')" class="rounded-xl border border-pink-400/40 bg-pink-500/15 px-3 py-3 text-sm font-semibold text-pink-200 hover:bg-pink-500/25">Bis auf Unterwäsche ausziehen</button>
+            </div>
+
             <div class="flex gap-3 w-full">
                 <button id="modal-penalty-btn" onclick="applyPenalty()" class="hidden flex-1 py-3 px-4 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 font-semibold text-sm transition-all">
                     Ablehnen (+2 Strafschlucke)
                 </button>
-                <button id="modal-action-btn" onclick="closeModal()" class="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-sm shadow-lg shadow-purple-900/40 transition-all">
+                <button id="modal-action-btn" onclick="completeModalAction()" class="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-sm shadow-lg shadow-purple-900/40 transition-all">
                     Erledigt!
                 </button>
             </div>
@@ -469,8 +479,8 @@
             { value: 'diverse', label: 'Divers', icon: 'fa-genderless' }
         ];
 
-        // 24 Board Tiles
-        const BOARD_TILES = [
+        // Classic board tiles
+        const CLASSIC_BOARD_TILES = [
             { id: 0, title: "Start", type: "start", icon: "fa-flag-checkered", desc: "Willkommen auf dem Feld! Alle trinken 1 Schluck zum Aufwärmen.", sips: 1 },
             { id: 1, title: "1 Schluck", type: "drink", icon: "fa-whiskey-glass", desc: "Nimm 1 Schluck von deinem Getränk.", sips: 1 },
             { id: 2, title: "Wahrheit oder Pflicht", type: "tod", icon: "fa-masks-theater", desc: "Wähle Wahrheit oder Pflicht! Wenn du ablehnst, trinkst du 2 Strafschlucke." },
@@ -497,6 +507,49 @@
             { id: 23, title: "ZIEL!", type: "finish", icon: "fa-trophy", desc: "Herzlichen Glückwunsch! Du hast das Ziel erreicht und gewonnen!" }
         ];
 
+        let BOARD_TILES = CLASSIC_BOARD_TILES;
+
+        const ADULT_BOARD_TILES = [
+            { id: 0, title: "Start / Ziel", type: "adultFinish", icon: "fa-flag-checkered", desc: "Du erreichst das Ziel nur mit der exakten Augenzahl." },
+            { id: 1, title: "Shot", type: "adultShot", icon: "fa-whiskey-glass", desc: "Trinke einen Shot!" },
+            { id: 2, title: "Schluck", type: "adultSip", icon: "fa-glass-water", desc: "Trinke einen Schluck!" },
+            { id: 3, title: "Aktionsfeld", type: "xmlTask", icon: "fa-wand-magic-sparkles", desc: "Ziehe eine zufällige Aufgabe aus der gewählten Stufe." },
+            { id: 4, title: "Mit den Nachbarn", type: "neighborsSip", icon: "fa-people-arrows-left-right", desc: "Trinke 3 Schlucke mit deinen beiden Nachbarn!" },
+            { id: 5, title: "2 Felder zurück", type: "backTwoToAction", icon: "fa-arrow-left", desc: "Gehe 2 Felder zurück. Das Aktionsfeld wird ausgelöst." },
+            { id: 6, title: "Noch einmal würfeln", type: "sipAndRoll", icon: "fa-dice", desc: "Trinke einen Schluck und würfle noch einmal!" },
+            { id: 7, title: "Zurück zum Start", type: "returnToStart", icon: "fa-rotate-left", desc: "Gehe zurück auf Feld 1." },
+            { id: 8, title: "Shot-Partner wählen", type: "shotPartner", icon: "fa-whiskey-glass", desc: "Wähle eine Person, mit der du einen Shot trinkst." },
+            { id: 9, title: "Alle trinken", type: "allSip", icon: "fa-users", desc: "Alle trinken einen Schluck!" },
+            { id: 10, title: "Schluck", type: "adultSip", icon: "fa-glass-water", desc: "Trinke einen Schluck!" },
+            { id: 11, title: "Aktionsfeld", type: "xmlTask", icon: "fa-wand-magic-sparkles", desc: "Ziehe eine zufällige Aufgabe aus der gewählten Stufe." },
+            { id: 12, title: "Älteste Person", type: "oldestShot", icon: "fa-user-clock", desc: "Wähle die älteste Person. Sie trinkt einen Shot." },
+            { id: 13, title: "Platztausch", type: "swapLast", icon: "fa-shuffle", desc: "Tausche mit der Person auf dem letzten Platz." },
+            { id: 14, title: "Shot-Partner wählen", type: "shotPartner", icon: "fa-whiskey-glass", desc: "Wähle eine Person, mit der du einen Shot trinkst." },
+            { id: 15, title: "Jüngste Person", type: "youngestShot", icon: "fa-child", desc: "Wähle die jüngste Person. Sie trinkt einen Shot." },
+            { id: 16, title: "Linker Nachbar", type: "leftShot", icon: "fa-arrow-left", desc: "Wähle deinen linken Nachbarn. Er trinkt einen Shot." },
+            { id: 17, title: "Aktionsfeld", type: "xmlTask", icon: "fa-wand-magic-sparkles", desc: "Ziehe eine zufällige Aufgabe aus der gewählten Stufe." },
+            { id: 18, title: "Letzter Platz", type: "lastShot", icon: "fa-ranking-star", desc: "Die letzte Person trinkt einen Shot." },
+            { id: 19, title: "Erster Platz", type: "firstShot", icon: "fa-trophy", desc: "Die erste Person trinkt einen Shot." },
+            { id: 20, title: "Entscheidung", type: "shotOrClothes", icon: "fa-scale-balanced", desc: "Entscheide: Trinke 3 Shots oder ziehe dich bis auf die Unterwäsche aus. Bei der zweiten Wahl trinken alle anderen einen Shot." },
+            { id: 21, title: "Schluck", type: "adultSip", icon: "fa-glass-water", desc: "Trinke einen Schluck!" },
+            { id: 22, title: "Würfle zurück", type: "backRoll", icon: "fa-dice", desc: "Würfle und gehe die gewürfelte Zahl an Feldern zurück." },
+            { id: 23, title: "Aktionsfeld", type: "xmlTask", icon: "fa-wand-magic-sparkles", desc: "Ziehe eine zufällige Aufgabe aus der gewählten Stufe." },
+            { id: 24, title: "Aktionsfeld", type: "xmlTask", icon: "fa-wand-magic-sparkles", desc: "Ziehe eine zufällige Aufgabe aus der gewählten Stufe." },
+            { id: 25, title: "Erster und letzter Platz", type: "firstLastShot", icon: "fa-people-group", desc: "Die erste und die letzte Person trinken je einen Shot!" },
+            { id: 26, title: "Schluck-Partner wählen", type: "sipPartner", icon: "fa-people-arrows-left-right", desc: "Wähle eine Person, mit der du einen Schluck trinkst." },
+            { id: 27, title: "Linker Nachbar", type: "swapPlayer", icon: "fa-shuffle", desc: "Tausche deine Position mit der Person links von dir." },
+            { id: 28, title: "Schwerste Person", type: "heaviestShot", icon: "fa-weight-scale", desc: "Wähle die schwerste Person. Sie trinkt einen Shot." },
+            { id: 29, title: "Aktionsfeld", type: "xmlTask", icon: "fa-wand-magic-sparkles", desc: "Ziehe eine zufällige Aufgabe aus der gewählten Stufe." },
+            { id: 30, title: "Zurück zu Feld 21", type: "toDecision", icon: "fa-arrow-left", desc: "Gehe zurück auf Feld 21. Die Aktion wird ausgelöst." },
+            { id: 31, title: "Jeans", type: "jeansSip", icon: "fa-jeans", desc: "Wähle alle Personen in Jeans. Sie trinken einen Schluck." },
+            { id: 32, title: "Einmal aussetzen", type: "skipNext", icon: "fa-forward-step", desc: "Du setzt deinen nächsten Zug aus." },
+            { id: 33, title: "Flaschendrehen", type: "bottleSpin", icon: "fa-bottle-water", desc: "Wähle eine Person, auf die die Flasche zeigt." },
+            { id: 34, title: "5 Felder zurück", type: "backFiveToAction", icon: "fa-arrow-left", desc: "Gehe 5 Felder zurück. Das Aktionsfeld wird ausgelöst." },
+            { id: 35, title: "Aktionsfeld", type: "xmlTask", icon: "fa-wand-magic-sparkles", desc: "Ziehe eine zufällige Aufgabe aus der gewählten Stufe." },
+            { id: 36, title: "Wegweiser", type: "branch", icon: "fa-code-branch", desc: "Würfle erneut: Bei gerader Zahl geht es Richtung Ziel, bei ungerader Zahl ab Feld 14 weiter." },
+            { id: 37, title: "Austrinken!", type: "finishDrink", icon: "fa-whiskey-glass", desc: "Trinke dein Getränk aus." }
+        ];
+
         // Sample Truth or Dare Cards
         const TRUTH_CARDS = [
             "Was war deine peinlichste Begegnung beim Feiern?",
@@ -520,6 +573,10 @@
         let isRolling = false;
         let pendingAction = null;
         let activeCustomizationPlayerIdx = null;
+        let adultQuestions = [];
+        let pendingFollowUpPosition = null;
+        let pendingExtraRoll = false;
+        let pendingAdultSelection = null;
         let selectedGameMode = 'classic';
         let selectedAdultLevel = 1;
 
@@ -690,8 +747,45 @@
         }
 
         /* --- GAME START & INITIALIZATION --- */
-        function startGame() {
+        async function loadAdultQuestions() {
+            const response = await fetch('./questions.xml');
+            if (!response.ok) throw new Error(`XML-Datei konnte nicht geladen werden (${response.status}).`);
+
+            const xml = new DOMParser().parseFromString(await response.text(), 'application/xml');
+            if (xml.querySelector('parsererror')) throw new Error('Die Aufgaben-XML ist ungültig.');
+
+            adultQuestions = [...xml.querySelectorAll('Question')]
+                .filter(question => question.getAttribute('am') === 'true')
+                .map(question => ({
+                    text: question.getAttribute('text') || '',
+                    level: Number(question.getAttribute('level'))
+                }))
+                .filter(question => question.text && question.level >= 1 && question.level <= 4);
+
+            if (!adultQuestions.length) throw new Error('Die Aufgaben-XML enthält keine gültigen 18+-Aufgaben.');
+        }
+
+        function getRandomAdultQuestion(level) {
+            const eligibleQuestions = adultQuestions.filter(question => question.level === level);
+            if (!eligibleQuestions.length) return null;
+            return eligibleQuestions[Math.floor(Math.random() * eligibleQuestions.length)];
+        }
+
+        async function startGame() {
             initAudio();
+            pendingFollowUpPosition = null;
+            pendingExtraRoll = false;
+            pendingAdultSelection = null;
+            if (selectedGameMode === '18plus' && !adultQuestions.length) {
+                try {
+                    await loadAdultQuestions();
+                } catch (error) {
+                    alert(`Die 18+-Aufgaben konnten nicht geladen werden. ${error.message}`);
+                    return;
+                }
+            }
+
+            BOARD_TILES = selectedGameMode === 'classic' ? CLASSIC_BOARD_TILES : ADULT_BOARD_TILES;
             players = playerInputsData.map((p, idx) => ({
                 id: idx,
                 name: p.name.trim() || `Spieler ${idx + 1}`,
@@ -699,7 +793,10 @@
                 color: p.color,
                 icon: p.icon,
                 position: 0,
+                hasStarted: false,
+                won: false,
                 sips: 0,
+                shots: 0,
                 skipTurn: false
             }));
 
@@ -797,7 +894,8 @@
                     </div>
                     <div class="flex items-center gap-3">
                         <span class="text-xs text-slate-400 font-mono">Feld ${p.position + 1}</span>
-                        <span class="px-2 py-0.5 rounded-md bg-purple-900/40 text-purple-300 font-bold text-xs border border-purple-500/20">${p.sips} 🍺</span>
+                        <span class="text-xs text-slate-400">${p.sips} Schlucke</span>
+                        ${selectedGameMode === '18plus' ? `<span class="text-xs text-amber-300">${p.shots} Shots</span>` : ''}
                     </div>
                 `;
                 list.appendChild(item);
@@ -846,6 +944,11 @@
         }
 
         function movePlayerSteps(player, steps) {
+            if (selectedGameMode === '18plus') {
+                moveAdultPlayerSteps(player, steps);
+                return;
+            }
+
             let remaining = steps;
 
             const interval = setInterval(() => {
@@ -867,6 +970,35 @@
             }, 250);
         }
 
+        function moveAdultPlayerSteps(player, steps) {
+            let remaining = steps;
+            let direction = 1;
+
+            const interval = setInterval(() => {
+                let nextPosition = player.position + direction;
+                if (direction > 0 && nextPosition >= BOARD_TILES.length) {
+                    nextPosition = 0;
+                    if (player.hasStarted && remaining > 1) direction = -1;
+                    else if (player.hasStarted && remaining === 1) player.won = true;
+                } else if (direction < 0 && nextPosition < 0) {
+                    nextPosition = BOARD_TILES.length - 1;
+                }
+
+                player.position = nextPosition;
+                if (nextPosition > 0) player.hasStarted = true;
+                remaining--;
+                playSound('step');
+                updatePlayerTokensOnBoard();
+
+                if (player.position === 36 || remaining <= 0) {
+                    clearInterval(interval);
+                    isRolling = false;
+                    document.getElementById('roll-btn').disabled = false;
+                    handleTileLanding(player);
+                }
+            }, 250);
+        }
+
         /* --- TILE ACTION MODAL HANDLING --- */
         function handleTileLanding(player) {
             const tile = BOARD_TILES[player.position];
@@ -880,16 +1012,25 @@
             const penaltyBtn = document.getElementById('modal-penalty-btn');
             const actionBtn = document.getElementById('modal-action-btn');
             const giveControls = document.getElementById('give-drinks-controls');
+            const adultChoiceControls = document.getElementById('adult-player-choice-controls');
+            const adultDecisionControls = document.getElementById('adult-decision-controls');
 
             titleEl.innerText = tile.title;
             iconEl.className = `fa-solid ${tile.icon}`;
             penaltyBtn.classList.add('hidden');
+            actionBtn.classList.remove('hidden');
             actionBtn.innerText = "Erledigt!";
             actionBtn.disabled = false;
             giveControls.classList.add('hidden');
+            adultChoiceControls.classList.add('hidden');
+            adultDecisionControls.classList.add('hidden');
+            pendingAdultSelection = null;
+            pendingFollowUpPosition = null;
 
             // Handle special tile contents
-            if (tile.type === 'tod') {
+            if (selectedGameMode === '18plus') {
+                handleAdultTileLanding(tile, player, bodyEl, actionBtn, adultChoiceControls, adultDecisionControls);
+            } else if (tile.type === 'tod') {
                 const isTruth = Math.random() > 0.5;
                 const cardText = isTruth ? 
                     TRUTH_CARDS[Math.floor(Math.random() * TRUTH_CARDS.length)] : 
@@ -944,6 +1085,235 @@
             card.classList.add('scale-100');
 
             updateDashboard();
+        }
+
+        function addSips(player, amount = 1) {
+            player.sips += amount;
+        }
+
+        function addShots(player, amount = 1) {
+            player.shots += amount;
+        }
+
+        function handleAdultTileLanding(tile, player, bodyEl, actionBtn, choiceControls, decisionControls) {
+            const selectPlayers = (type, prompt, multiple = false, excludeCurrent = false) => {
+                renderAdultPlayerChoices(type, prompt, multiple, excludeCurrent);
+                choiceControls.classList.remove('hidden');
+                actionBtn.innerText = 'Auswahl bestätigen';
+                actionBtn.disabled = true;
+            };
+            const setFollowUp = position => {
+                player.position = position;
+                pendingFollowUpPosition = position;
+                updatePlayerTokensOnBoard();
+            };
+
+            switch (tile.type) {
+                case 'adultFinish':
+                    if (player.won) {
+                        bodyEl.innerText = `Herzlichen Glückwunsch, ${player.name}! Du hast das Ziel exakt erreicht und gewonnen!`;
+                        triggerConfetti();
+                        playSound('win');
+                    } else {
+                        bodyEl.innerText = tile.desc;
+                    }
+                    break;
+                case 'adultShot':
+                    addShots(player);
+                    bodyEl.innerText = tile.desc;
+                    playSound('drink');
+                    break;
+                case 'adultSip':
+                    addSips(player);
+                    bodyEl.innerText = tile.desc;
+                    playSound('drink');
+                    break;
+                case 'xmlTask': {
+                    const question = getRandomAdultQuestion(selectedAdultLevel);
+                    bodyEl.innerText = question
+                        ? `Stufe ${selectedAdultLevel}\n${question.text}`
+                        : `Für Stufe ${selectedAdultLevel} wurden keine Aufgaben gefunden.`;
+                    break;
+                }
+                case 'neighborsSip': {
+                    const neighborIds = new Set([
+                        (player.id - 1 + players.length) % players.length,
+                        player.id,
+                        (player.id + 1) % players.length
+                    ]);
+                    players.filter(p => neighborIds.has(p.id)).forEach(p => addSips(p, 3));
+                    bodyEl.innerText = tile.desc;
+                    playSound('drink');
+                    break;
+                }
+                case 'backTwoToAction':
+                    bodyEl.innerText = tile.desc;
+                    setFollowUp(Math.max(0, player.position - 2));
+                    break;
+                case 'sipAndRoll':
+                    addSips(player);
+                    pendingExtraRoll = true;
+                    bodyEl.innerText = tile.desc;
+                    playSound('drink');
+                    break;
+                case 'returnToStart':
+                    player.position = 0;
+                    bodyEl.innerText = tile.desc;
+                    updatePlayerTokensOnBoard();
+                    break;
+                case 'shotPartner':
+                    bodyEl.innerText = tile.desc;
+                    selectPlayers(tile.type, 'Wähle eine andere Person.', false, true);
+                    break;
+                case 'allSip':
+                    players.forEach(p => addSips(p));
+                    bodyEl.innerText = tile.desc;
+                    playSound('drink');
+                    break;
+                case 'oldestShot':
+                case 'youngestShot':
+                case 'leftShot':
+                case 'heaviestShot':
+                    bodyEl.innerText = tile.desc;
+                    selectPlayers(tile.type, tile.type === 'leftShot' ? 'Wähle deinen linken Nachbarn.' : 'Wähle eine Person.', false, tile.type === 'leftShot');
+                    break;
+                case 'swapLast': {
+                    const lastPlayer = [...players].filter(p => p.id !== player.id).sort((a, b) => a.position - b.position)[0];
+                    if (lastPlayer) {
+                        [player.position, lastPlayer.position] = [lastPlayer.position, player.position];
+                        bodyEl.innerText = `${tile.desc} Getauscht mit ${lastPlayer.name}.`;
+                        if (BOARD_TILES[player.position].type === 'xmlTask') pendingFollowUpPosition = player.position;
+                        updatePlayerTokensOnBoard();
+                    }
+                    break;
+                }
+                case 'lastShot': {
+                    const lastPlayer = [...players].sort((a, b) => a.position - b.position)[0];
+                    addShots(lastPlayer);
+                    bodyEl.innerText = `${lastPlayer.name} trinkt einen Shot!`;
+                    playSound('drink');
+                    break;
+                }
+                case 'firstShot': {
+                    const firstPlayer = [...players].sort((a, b) => b.position - a.position)[0];
+                    addShots(firstPlayer);
+                    bodyEl.innerText = `${firstPlayer.name} trinkt einen Shot!`;
+                    playSound('drink');
+                    break;
+                }
+                case 'shotOrClothes':
+                    bodyEl.innerText = tile.desc;
+                    decisionControls.classList.remove('hidden');
+                    actionBtn.classList.add('hidden');
+                    break;
+                case 'backRoll': {
+                    const roll = Math.floor(Math.random() * 6) + 1;
+                    const destination = Math.max(0, player.position - roll);
+                    bodyEl.innerText = `Du hast eine ${roll} gewürfelt und gehst zurück auf Feld ${destination + 1}.`;
+                    player.position = destination;
+                    if (BOARD_TILES[destination].type === 'xmlTask') pendingFollowUpPosition = destination;
+                    updatePlayerTokensOnBoard();
+                    break;
+                }
+                case 'firstLastShot': {
+                    const ranking = [...players].sort((a, b) => b.position - a.position);
+                    const drinkers = new Set([ranking[0], ranking[ranking.length - 1]]);
+                    drinkers.forEach(p => addShots(p));
+                    bodyEl.innerText = `${[...drinkers].map(p => p.name).join(' und ')} trinken je einen Shot!`;
+                    playSound('drink');
+                    break;
+                }
+                case 'sipPartner':
+                    bodyEl.innerText = tile.desc;
+                    selectPlayers(tile.type, 'Wähle eine andere Person.', false, true);
+                    break;
+                case 'swapPlayer':
+                    bodyEl.innerText = tile.desc;
+                    selectPlayers(tile.type, 'Wähle die Person links von dir.', false, true);
+                    break;
+                case 'toDecision':
+                    bodyEl.innerText = tile.desc;
+                    setFollowUp(20);
+                    break;
+                case 'jeansSip':
+                    bodyEl.innerText = tile.desc;
+                    selectPlayers(tile.type, 'Wähle alle Personen, die Jeans tragen.', true);
+                    break;
+                case 'skipNext':
+                    player.skipTurn = true;
+                    bodyEl.innerText = tile.desc;
+                    break;
+                case 'bottleSpin':
+                    bodyEl.innerText = tile.desc;
+                    selectPlayers(tile.type, 'Wähle, auf wen die Flasche zeigt.', false);
+                    break;
+                case 'backFiveToAction':
+                    bodyEl.innerText = tile.desc;
+                    setFollowUp(29);
+                    break;
+                case 'branch':
+                    bodyEl.innerText = tile.desc;
+                    actionBtn.innerText = 'Erneut würfeln';
+                    break;
+                case 'finishDrink':
+                    bodyEl.innerText = tile.desc;
+                    break;
+            }
+        }
+
+        function renderAdultPlayerChoices(type, prompt, multiple, excludeCurrent) {
+            pendingAdultSelection = { type, multiple };
+            const container = document.getElementById('adult-player-choice-list');
+            const summary = document.getElementById('adult-player-choice-summary');
+            container.innerHTML = '';
+            summary.innerText = prompt;
+
+            players.filter(player => !excludeCurrent || player.id !== currentPlayerIdx).forEach(player => {
+                const row = document.createElement('label');
+                row.className = "flex cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-slate-900/50 px-3 py-2 hover:bg-white/5";
+                const input = document.createElement('input');
+                input.type = multiple ? 'checkbox' : 'radio';
+                input.name = 'adult-player-choice';
+                input.value = String(player.id);
+                input.className = "h-4 w-4 accent-pink-500";
+                const name = document.createElement('span');
+                name.className = "text-sm text-slate-100";
+                name.textContent = player.name;
+                input.addEventListener('change', () => {
+                    const selected = [...container.querySelectorAll('input:checked')];
+                    document.getElementById('modal-action-btn').disabled = selected.length === 0;
+                    if (type === 'bottleSpin' && selected.length) {
+                        summary.innerText = `Die Flasche zeigt auf ${players[Number(selected[0].value)].name}.`;
+                    }
+                });
+                row.append(input, name);
+                container.appendChild(row);
+            });
+        }
+
+        function completeModalAction() {
+            if (pendingAction && pendingAction.type === 'branch') {
+                const roll = Math.floor(Math.random() * 6) + 1;
+                const destination = roll % 2 === 0 ? 37 : 13;
+                logMessage(`Feld 37: ${roll} gewürfelt, weiter zu Feld ${destination + 1}.`);
+                pendingFollowUpPosition = destination;
+            }
+            closeModal();
+        }
+
+        function resolveAdultDecision(choice) {
+            const player = players[currentPlayerIdx];
+            if (choice === 'shots') {
+                addShots(player, 3);
+                logMessage(`${player.name} trinkt 3 Shots.`);
+                playSound('drink');
+            } else {
+                players.filter(p => p.id !== player.id).forEach(p => addShots(p));
+                logMessage(`${player.name} wählt die Unterwäsche-Option. Alle anderen trinken einen Shot.`);
+                playSound('drink');
+            }
+            updateDashboard();
+            closeModal();
         }
 
         function renderGiveDrinkChoices() {
@@ -1001,6 +1371,61 @@
             document.getElementById('modal-action-btn').disabled = total !== required || !validAmounts;
         }
 
+        function applyAdultPlayerSelection() {
+            if (!pendingAdultSelection) return true;
+
+            const selectedIds = [...document.querySelectorAll('#adult-player-choice-list input:checked')]
+                .map(input => Number(input.value));
+            if (!selectedIds.length) return false;
+
+            const actor = players[currentPlayerIdx];
+            const selectedPlayers = selectedIds.map(id => players.find(player => player.id === id)).filter(Boolean);
+
+            switch (pendingAdultSelection.type) {
+                case 'shotPartner':
+                    addShots(actor);
+                    selectedPlayers.forEach(player => addShots(player));
+                    logMessage(`${actor.name} und ${selectedPlayers.map(player => player.name).join(', ')} trinken je einen Shot.`);
+                    playSound('drink');
+                    break;
+                case 'sipPartner':
+                    addSips(actor);
+                    selectedPlayers.forEach(player => addSips(player));
+                    logMessage(`${actor.name} und ${selectedPlayers.map(player => player.name).join(', ')} trinken je einen Schluck.`);
+                    playSound('drink');
+                    break;
+                case 'oldestShot':
+                case 'youngestShot':
+                case 'leftShot':
+                case 'heaviestShot':
+                    selectedPlayers.forEach(player => addShots(player));
+                    logMessage(`${selectedPlayers.map(player => player.name).join(', ')} trinkt einen Shot.`);
+                    playSound('drink');
+                    break;
+                case 'swapPlayer': {
+                    const target = selectedPlayers[0];
+                    [actor.position, target.position] = [target.position, actor.position];
+                    if (BOARD_TILES[actor.position].type === 'xmlTask') pendingFollowUpPosition = actor.position;
+                    logMessage(`${actor.name} tauscht die Position mit ${target.name}.`);
+                    updatePlayerTokensOnBoard();
+                    break;
+                }
+                case 'jeansSip':
+                    selectedPlayers.forEach(player => addSips(player));
+                    logMessage(`${selectedPlayers.map(player => player.name).join(', ')} trinken je einen Schluck.`);
+                    playSound('drink');
+                    break;
+                case 'bottleSpin':
+                    document.getElementById('modal-body').innerText = `Die Flasche zeigt auf ${selectedPlayers[0].name}.`;
+                    logMessage(`Beim Flaschendrehen zeigt die Flasche auf ${selectedPlayers[0].name}.`);
+                    break;
+            }
+
+            pendingAdultSelection = null;
+            updateDashboard();
+            return true;
+        }
+
         function closeModal() {
             const modal = document.getElementById('action-modal');
             const card = document.getElementById('action-card');
@@ -1022,13 +1447,31 @@
                 playSound('drink');
                 updateDashboard();
             }
+
+            if (!applyAdultPlayerSelection()) return;
             
             modal.classList.add('opacity-0', 'pointer-events-none');
             card.classList.remove('scale-100');
             card.classList.add('scale-90');
 
+            if (pendingFollowUpPosition !== null) {
+                players[currentPlayerIdx].position = pendingFollowUpPosition;
+                pendingFollowUpPosition = null;
+                updatePlayerTokensOnBoard();
+                handleTileLanding(players[currentPlayerIdx]);
+                return;
+            }
+
+            if (pendingExtraRoll) {
+                pendingExtraRoll = false;
+                updateDashboard();
+                updatePlayerTokensOnBoard();
+                return;
+            }
+
             // Check if game won
-            if (players[currentPlayerIdx].position >= BOARD_TILES.length - 1) {
+            if ((selectedGameMode === '18plus' && players[currentPlayerIdx].won) ||
+                (selectedGameMode === 'classic' && players[currentPlayerIdx].position >= BOARD_TILES.length - 1)) {
                 logMessage(`🏆 ${players[currentPlayerIdx].name} hat „Das Trinkspiel!“ gewonnen!`);
                 return;
             }
